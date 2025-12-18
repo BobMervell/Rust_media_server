@@ -1,5 +1,6 @@
-use smb::{Client, ClientConfig, Directory, FileAccessMask, FileAttributes, FileDirectoryInformation, Resource, UncPath};
-use std::{io, str::FromStr, sync::Arc};
+use futures::{FutureExt, future::BoxFuture};
+use smb::{Client, ClientConfig, Directory, FileAccessMask, FileAllInformation, FileDirectoryInformation, Resource, UncPath};
+use std::{error::Error, fmt::format, io, pin::Pin, str::FromStr, sync::Arc};
 use trpl::StreamExt;
 
 
@@ -16,8 +17,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client_info = smb_connect().await?;
     let tree: Arc<smb::Tree> = client_info.client.get_tree(&client_info.path).await?;
 
-    let path = client_info.path.to_string();
-    explore_smb_dir(tree,&path).await?;
+    explore_smb_dir(tree,"").await;
 
     Ok(())
 }
@@ -48,19 +48,23 @@ async fn smb_connect() ->  Result<ClientInfo, Box<dyn std::error::Error>> {
 }
 
 
-async fn explore_smb_dir (tree:Arc<smb::Tree>, root_path:&str) ->  Result<(), Box<dyn std::error::Error>> {
-    let root_path = "";
-    let access_mask = FileAccessMask::new().with_generic_read(true);
-    println!("no");
+fn explore_smb_dir <'a>(tree:Arc<smb::Tree>, root_path:&'a str) -> BoxFuture<'a, Result<String, Box<dyn Error>>> {
+    Box::pin(async move {
 
-    let resource = tree.open_existing("",access_mask).await?;
+    let access_mask = FileAccessMask::new().with_generic_read(true);
+    let resource = tree.open_existing(root_path,access_mask).await?;
     println!("yes");
     match resource {
-        Resource::File(_file) => {
-            Err(format!("The path « {} » is not a directory but a file", root_path).into())
+        Resource::File(file) => {
+            let file_info = file.query_info::<FileAllInformation>().await?;
+            println!("Well hello there !!!! {:?}", file_info.name);
+            Ok (file_info.name.to_string())
         }
         Resource::Pipe(_pipe) => {
-            Err(format!("The path « {} » is not a directory but a pipe", root_path).into())
+            let test = format!("The path « {} » is not a directory but a pipe", root_path);
+            println!("{}",test);
+            Ok(test)
+       
         }
         Resource::Directory(dir) => {
             let dir: Arc<Directory> = Arc::from(dir);
@@ -69,23 +73,15 @@ async fn explore_smb_dir (tree:Arc<smb::Tree>, root_path:&str) ->  Result<(), Bo
                 match entry {
                     Ok(file_info) => {
                         if file_info.file_attributes.directory() {
-                            let sub_path = file_info.file_name.to_string();
-                             if sub_path == "." || sub_path == ".." {
+                            let mut sub_path = file_info.file_name.to_string();
+                            if root_path != "" {
+                                sub_path = format!("{}/{}",root_path,sub_path);
+                            }
+                             if sub_path.ends_with("/.") || sub_path.ends_with("/..") || sub_path == "." || sub_path == ".." {
                                 continue;
                             }
                             println!("{}", sub_path);
-                            let resource = tree.open_existing(&sub_path,access_mask).await?;
-                            match resource {
-                                Resource::File(_file) => {
-                                    println!("Unvalid  path: {}. This path leads to a file, should be a directory. ", sub_path);
-                                }
-                                Resource::Directory(dir) => {
-                                    println!("We have a dir {}",sub_path);     
-                                }
-                                Resource::Pipe(_pipe) => {
-                                    println!("Unvalid  path: {}. This path leads to a pipe, should be a directory. ", sub_path);
-                                }
-                            }
+                            explore_smb_dir(Arc::clone(&tree),&sub_path).await?;
 
                         }
                         else if !file_info.file_attributes.directory() {
@@ -98,8 +94,11 @@ async fn explore_smb_dir (tree:Arc<smb::Tree>, root_path:&str) ->  Result<(), Bo
                     }
                 }
             }
-            Ok(())
+            let test = format!("The path « {} » is not a directory but a pipe", root_path);
+            Ok(test)
         }
     }
+})
 }
+
 
