@@ -1,6 +1,6 @@
-use futures::{FutureExt, future::BoxFuture};
+use futures::{future::BoxFuture};
 use smb::{Client, ClientConfig, Directory, FileAccessMask, FileAllInformation, FileDirectoryInformation, Resource, UncPath};
-use std::{error::Error, fmt::format, io, pin::Pin, str::FromStr, sync::Arc};
+use std::{error::Error, io, str::FromStr, sync::Arc};
 use trpl::StreamExt;
 
 
@@ -17,7 +17,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client_info = smb_connect().await?;
     let tree: Arc<smb::Tree> = client_info.client.get_tree(&client_info.path).await?;
 
-    explore_smb_dir(tree,"").await;
+    explore_smb_dir(tree,"").await?;
 
     Ok(())
 }
