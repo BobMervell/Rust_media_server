@@ -1,9 +1,10 @@
 use futures::{FutureExt, future::BoxFuture};
-use smb::{Client, ClientConfig, Directory, FileAccessMask, FileAllInformation, FileDirectoryInformation, Resource, UncPath};
-use tokio::sync::Mutex;
+use smb::{
+    Client, ClientConfig, Directory, FileAccessMask, FileDirectoryInformation, Resource, UncPath,
+};
 use std::{error::Error, fmt, io, str::FromStr, sync::Arc};
+use tokio::sync::Mutex;
 use trpl::StreamExt;
-
 
 struct ClientInfo {
     client: smb::Client,
@@ -11,39 +12,34 @@ struct ClientInfo {
 }
 #[derive(Debug)]
 struct MovieData {
-    name: String,
+    file_name: String,
     path: String,
 }
 impl fmt::Display for MovieData {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} ({})", self.name, self.path)
+        write!(f, "{} ({})", self.file_name, self.path)
     }
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-
-    
-
     let client_info = smb_connect().await?;
     let tree: Arc<smb::Tree> = client_info.client.get_tree(&client_info.path).await?;
     let out = Arc::new(Mutex::new(Vec::new()));
 
-    scrap_smb_dir(tree,"",Arc::clone(&out)).await?;
+    scrap_smb_dir(tree, "", Arc::clone(&out)).await?;
 
     let result = out.lock().await;
-    println!("{:#?}", &*result);
+    //println!("{:#?}", &*result);
 
     Ok(())
 }
 
-
-async fn smb_connect() ->  Result<ClientInfo, Box<dyn std::error::Error>> {
-
+async fn smb_connect() -> Result<ClientInfo, Box<dyn std::error::Error>> {
     let mut path = String::new();
     println!("Enter the samba remote path");
     io::stdin().read_line(&mut path)?;
-    let path = path.trim_end(); 
+    let path = path.trim_end();
 
     let mut username = String::new();
     println!("Enter the username");
@@ -53,15 +49,15 @@ async fn smb_connect() ->  Result<ClientInfo, Box<dyn std::error::Error>> {
     let mut passwd = String::new();
     println!("Enter the passord");
     io::stdin().read_line(&mut passwd)?;
-    let passwd=passwd.trim_end();
+    let passwd = passwd.trim_end();
 
     let client = Client::new(ClientConfig::default());
     let path: UncPath = UncPath::from_str(path).unwrap();
-    client.share_connect(&path, username, passwd.to_string()).await?;
-    Ok(ClientInfo {client,path})
-    
+    client
+        .share_connect(&path, username, passwd.to_string())
+        .await?;
+    Ok(ClientInfo { client, path })
 }
-
 
 fn scrap_smb_dir<'a>(
     tree: Arc<smb::Tree>,
@@ -98,14 +94,18 @@ fn scrap_smb_dir<'a>(
                         if !root_path.is_empty() {
                             sub_path = format!("{}/{}", root_path, sub_path);
                         }
-                        if sub_path.ends_with("/.") || sub_path.ends_with("/..") || sub_path == "." || sub_path == ".." {
+                        if sub_path.ends_with("/.")
+                            || sub_path.ends_with("/..")
+                            || sub_path == "."
+                            || sub_path == ".."
+                        {
                             continue;
                         }
                         // appel récursif en passant le même `out`
                         scrap_smb_dir(Arc::clone(&tree), &sub_path, Arc::clone(&out)).await?;
                     } else {
                         let movie_path = &format!("{}/{}", root_path, file_info.file_name);
-                        let moviedata = create_movie_data(movie_path );
+                        let moviedata = create_movie_data(movie_path);
                         let mut guard = out.lock().await;
                         guard.push(moviedata);
                     }
@@ -122,14 +122,14 @@ fn scrap_smb_dir<'a>(
     .boxed()
 }
 
-
-fn create_movie_data (movie_path: &str) -> MovieData {
+fn create_movie_data(movie_path: &str) -> MovieData {
     let mut movie_data = MovieData {
-        name : "".to_owned(),
-        path : movie_path.to_owned()
+        file_name: "".to_owned(),
+        path: movie_path.to_owned(),
     };
-    if let Some((_, name)) = movie_path.rsplit_once('/') {
-        movie_data.name = name.to_owned()
+    if let Some((test, name)) = movie_path.rsplit_once('/') {
+        println!("Folder name: {}, file name: {}", test, name);
+        movie_data.file_name = name.to_owned()
     }
     movie_data
 }
