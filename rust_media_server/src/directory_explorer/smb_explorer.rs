@@ -101,38 +101,61 @@ impl SmbExplorer {
     async fn handle_stream<'a>(
         &self,
         mut data_stream: QueryDirectoryStream<'a, FileDirectoryInformation>,
-        root_path: String,
+        path: String,
         movies: Arc<Mutex<Vec<MovieData>>>,
     ) -> Result<(), Box<dyn Error>> {
         while let Some(entry) = data_stream.next().await {
             match entry {
                 Ok(file_info) => {
                     if file_info.file_attributes.directory() {
+                        //Parse directory path
                         if file_info.file_name == "." || file_info.file_name == ".." {
                             continue;
                         }
 
-                        let sub_path = if root_path.is_empty() {
+                        let sub_path = if path.is_empty() {
                             file_info.file_name.to_string()
                         } else {
-                            format!("{}/{}", root_path, file_info.file_name)
+                            format!("{}/{}", path, file_info.file_name)
                         };
-                        println!("{}", sub_path);
-                        // appel récursif boxé
                         self.explore_path(sub_path, Arc::clone(&movies)).await?;
                     } else {
-                        let movie_path = if root_path.is_empty() {
+                        //parse file path
+                        let movie_path = if path.is_empty() {
                             file_info.file_name.to_string()
                         } else {
-                            format!("{}/{}", root_path, file_info.file_name)
+                            format!("{}/{}", path, file_info.file_name)
                         };
-                        movies.lock().unwrap().push(MovieData::new(movie_path));
+                        if self.is_video_file(&file_info.file_name.to_string()) && self.is_not_featurette(&path){
+                            println!("{}", movie_path);
+                            movies.lock().unwrap().push(MovieData::new(movie_path));
+                        }
                     }
                 }
                 Err(e) => eprintln!("Error retrieving entry: {:?}", e),
             }
         }
         Ok(())
+    }
+
+    fn is_video_file(&self, file_name: &str) -> bool {
+        let video_extensions = ["mp4", "mkv", "avi", "mov", "flv", "wmv", "webm"];
+
+        if let Some(ext) = file_name.rsplit('.').next() {
+            video_extensions.contains(&ext.to_lowercase().as_str())
+        } else {
+            false
+        }
+    }
+
+    fn is_not_featurette(&self, file_path:&str) -> bool {
+        let featurette_names = ["featurettes","featurette","feat"];
+        if let Some(ext) = file_path.rsplit('/').next() {
+            !featurette_names.contains(&ext.to_lowercase().as_str())
+        } else {
+            true
+        }
+
     }
 }
 // pub fn tree(&self) -> Arc<smb::Tree> {
@@ -148,11 +171,4 @@ impl SmbExplorer {
 //     }
 // }
 
-// fn is_video_file(&self,file_name: &str) -> bool {
-//     let video_extensions = ["mp4", "mkv", "avi", "mov", "flv", "wmv", "webm"];
-
-//     if let Some(ext) = file_name.rsplit('.').next() {
-//         video_extensions.contains(&ext.to_lowercase().as_str())
-//     } else {
-//         false
-//     }
+//
