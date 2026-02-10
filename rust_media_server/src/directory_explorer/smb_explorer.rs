@@ -120,8 +120,9 @@ impl SmbExplorer {
                         if self.is_video_file(&file_info.file_name.to_string())
                             && self.is_not_featurette(&path)
                         {
-                            println!("{}", movie_path);
-                            movies.lock().unwrap().push(MovieData::new(movie_path));
+                            let movie = MovieData::new(movie_path);
+                            println!("{}", movie);
+                            movies.lock().unwrap().push(movie);
                         }
                     }
                 }
@@ -150,17 +151,3 @@ impl SmbExplorer {
         }
     }
 }
-// pub fn tree(&self) -> Arc<smb::Tree> {
-//     //ne clone pas tree seulement le pointer arc
-//     Arc::clone(&self.tree)
-// }
-// fn get_file_name(&self,file_path:&str)-> &str {
-//     if let Some((_folder, name)) = file_path.rsplit_once('/') {
-//         println!("Folder name: {}, file name: {}", _folder, name);
-//         name
-//     } else {
-//         file_path
-//     }
-// }
-
-//
