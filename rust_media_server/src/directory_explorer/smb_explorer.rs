@@ -2,20 +2,16 @@ use crate::movie_data::movie_data::MovieData;
 use futures::{FutureExt, future::BoxFuture};
 use smb::{
     Client, ClientConfig, Directory, FileAccessMask, FileDirectoryInformation, Resource, UncPath,
-    client, resource::iter_stream::QueryDirectoryStream,
+    resource::iter_stream::QueryDirectoryStream,
 };
 use std::{
     error::Error,
-    fmt::format,
     str::FromStr,
     sync::{Arc, Mutex},
 };
 use trpl::StreamExt;
 
 pub struct SmbExplorer {
-    client: smb::Client,
-    path: String,
-    username: String,
     tree: Arc<smb::Tree>,
 }
 
@@ -30,12 +26,7 @@ impl SmbExplorer {
         client.share_connect(&uncpath, &username, password).await?;
 
         let tree = client.get_tree(&uncpath).await?;
-        Ok(Self {
-            client: client,
-            path: path,
-            username: username,
-            tree: tree,
-        })
+        Ok(Self { tree: tree })
     }
 
     pub async fn fetch_movies(&self) {
@@ -126,7 +117,9 @@ impl SmbExplorer {
                         } else {
                             format!("{}/{}", path, file_info.file_name)
                         };
-                        if self.is_video_file(&file_info.file_name.to_string()) && self.is_not_featurette(&path){
+                        if self.is_video_file(&file_info.file_name.to_string())
+                            && self.is_not_featurette(&path)
+                        {
                             println!("{}", movie_path);
                             movies.lock().unwrap().push(MovieData::new(movie_path));
                         }
@@ -148,14 +141,13 @@ impl SmbExplorer {
         }
     }
 
-    fn is_not_featurette(&self, file_path:&str) -> bool {
-        let featurette_names = ["featurettes","featurette","feat"];
+    fn is_not_featurette(&self, file_path: &str) -> bool {
+        let featurette_names = ["featurettes", "featurette", "feat"];
         if let Some(ext) = file_path.rsplit('/').next() {
             !featurette_names.contains(&ext.to_lowercase().as_str())
         } else {
             true
         }
-
     }
 }
 // pub fn tree(&self) -> Arc<smb::Tree> {
