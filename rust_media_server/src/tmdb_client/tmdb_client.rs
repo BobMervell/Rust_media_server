@@ -17,24 +17,57 @@ struct SearchParams<'a> {
 }
 
 #[derive(Deserialize, Debug, Clone)]
-pub struct Movie {
+pub struct SearchedMovie {
     id: u32,
     original_title: String,
-    title:String,
+    title: String,
     genre_ids: Vec<i32>,
     popularity: f32,
     vote_average: f32,
     release_date: String,
     overview: String,
 }
+impl SearchedMovie {
+    pub fn id(&self) -> u32 {
+        self.id
+    }
+
+    pub fn original_title(&self) -> &str {
+        &self.original_title
+    }
+
+    pub fn title(&self) -> &str {
+        &self.title
+    }
+
+    pub fn genre_ids(&self) -> &Vec<i32> {
+        &self.genre_ids
+    }
+
+    pub fn popularity(&self) -> f32 {
+        self.popularity
+    }
+
+    pub fn vote_average(&self) -> f32 {
+        self.vote_average
+    }
+
+    pub fn release_date(&self) -> &str {
+        &self.release_date
+    }
+
+    pub fn overview(&self) -> &str {
+        &self.overview
+    }
+}
 
 #[derive(Deserialize, Debug)]
 pub struct MovieSearchResult {
-    results: Vec<Movie>,
+    results: Vec<SearchedMovie>,
 }
 
 impl MovieSearchResult {
-    fn iter(&self) -> std::slice::Iter<'_, Movie> {
+    fn iter(&self) -> std::slice::Iter<'_, SearchedMovie> {
         self.results.iter()
     }
 }
@@ -62,13 +95,20 @@ impl TMDBClient {
         Ok(Self { client: client })
     }
 
-    pub async fn get_movie_info(&self, movie_name: &str, movie_year: Option<u32>) -> Option<Movie> {
+    pub async fn get_movie_info(
+        &self,
+        movie_name: &str,
+        movie_year: Option<u32>,
+    ) -> Option<SearchedMovie> {
         let movie_result = self.fetch_movie_by_name(movie_name, movie_year).await;
 
         match movie_result {
             Ok(fetch_result) => {
                 if fetch_result.results.len() == 0 {
-                    println!("NO RESULT FOUND FOR MOVIE: {}, {:#?}",movie_name, movie_year);
+                    println!(
+                        "NO RESULT FOUND FOR MOVIE: {}, {:#?}",
+                        movie_name, movie_year
+                    );
                     return None;
                 }
                 return Some(self.get_most_popular(fetch_result));
@@ -102,7 +142,7 @@ impl TMDBClient {
         Ok(body_json)
     }
 
-    fn get_most_popular(&self, fetch_result: MovieSearchResult) -> Movie {
+    fn get_most_popular(&self, fetch_result: MovieSearchResult) -> SearchedMovie {
         let mut max_pop: f32 = 0.0;
         let mut result_movie = fetch_result.results[0].clone();
         for movie in fetch_result.iter() {
