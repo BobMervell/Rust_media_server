@@ -119,7 +119,7 @@ impl SmbExplorer {
                             && self.is_not_featurette(&path)
                         {
                             let movie = MovieData::new(movie_path);
-                            println!("{}", movie);
+                            println!("{}", movie.file_title());
                             movies.lock().unwrap().push(movie);
                         }
                     }
