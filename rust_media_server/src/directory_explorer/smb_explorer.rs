@@ -29,8 +29,8 @@ impl SmbExplorer {
         Ok(Self { tree: tree })
     }
 
-    pub async fn fetch_movies(&self) {
-        let movies = Arc::new(Mutex::new(Vec::new()));
+    pub async fn fetch_movies(&self) -> Vec<MovieData> {
+        let movies: Arc<Mutex<Vec<MovieData>>> = Arc::new(Mutex::new(Vec::new()));
 
         println!("starting");
         let root_path = "";
@@ -38,9 +38,7 @@ impl SmbExplorer {
             .await
             .unwrap();
 
-        for movie in movies.lock().unwrap().iter() {
-            println!("{}", movie);
-        }
+        return movies.lock().unwrap().clone();
     }
 
     fn explore_path<'a>(

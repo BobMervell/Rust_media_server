@@ -20,10 +20,10 @@ struct SearchParams<'a> {
 pub struct Movie {
     id: u32,
     original_title: String,
+    title:String,
     genre_ids: Vec<i32>,
     popularity: f32,
     vote_average: f32,
-    video: bool,
     release_date: String,
     overview: String,
 }
@@ -67,6 +67,10 @@ impl TMDBClient {
 
         match movie_result {
             Ok(fetch_result) => {
+                if fetch_result.results.len() == 0 {
+                    println!("NO RESULT FOUND FOR MOVIE: {}, {:#?}",movie_name, movie_year);
+                    return None;
+                }
                 return Some(self.get_most_popular(fetch_result));
             }
             Err(e) => {
