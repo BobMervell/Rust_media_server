@@ -1,4 +1,87 @@
+use serde::Deserialize;
 use std::fmt;
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct Cast {
+    id: i32,
+    name: String,
+    #[serde(rename = "profile_path")]
+    picture_path: Option<String>,
+    character: String,
+    order: i32,
+}
+impl fmt::Display for Cast {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Person ID:           {}\n\
+             Name:                {}\n\
+             Picture path:        {:?}\n\
+             Character:           {}\n\
+             Order:               {}",
+            self.id, self.name, self.picture_path, self.character, self.order
+        )
+    }
+}
+
+impl Cast {
+    pub fn id(&self) -> i32 {
+        self.id
+    }
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+    pub fn picture_path(&self) -> &Option<String> {
+        &self.picture_path
+    }
+    pub fn character(&self) -> &str {
+        &self.character
+    }
+    pub fn order(&self) -> i32 {
+        self.order
+    }
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct Crew {
+    id: i32,
+    name: String,
+    #[serde(rename = "profile_path")]
+    picture_path: Option<String>,
+    department: String,
+    job: String,
+}
+impl fmt::Display for Crew {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Person ID:           {}\n\
+             Name:                {}\n\
+             Picture path:        {:?}\n\
+             Character:           {}\n\
+             Order:               {}",
+            self.id, self.name, self.picture_path, self.department, self.job
+        )
+    }
+}
+
+impl Crew {
+    pub fn id(&self) -> i32 {
+        self.id
+    }
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+    pub fn picture_path(&self) -> &Option<String> {
+        &self.picture_path
+    }
+    pub fn department(&self) -> &str {
+        &self.department
+    }
+    pub fn job(&self) -> &str {
+        &self.job
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct MovieData {
@@ -12,7 +95,9 @@ pub struct MovieData {
     genres: Vec<String>,
     vote_average: f32,
     release_date: String,
-    sumary: String,
+    summary: String,
+    cast: Vec<Cast>,
+    crew: Vec<Crew>,
 }
 
 impl fmt::Display for MovieData {
@@ -29,7 +114,9 @@ impl fmt::Display for MovieData {
              Genres:           {:?}\n\
              Vote average:        {:.1}\n\
              Release date:        {}\n\
-             Summary:             {}",
+             Summary:             {}\n\
+             Cast                 {:?}\n\
+             Crew                 {:?}",
             self.file_path,
             self.file_title,
             self.file_year,
@@ -40,7 +127,9 @@ impl fmt::Display for MovieData {
             self.genres,
             self.vote_average,
             self.release_date,
-            self.sumary
+            self.summary,
+            self.cast,
+            self.crew
         )
     }
 }
@@ -72,7 +161,9 @@ impl MovieData {
             genres: vec![],
             vote_average: 0.0,
             release_date: "".to_owned(),
-            sumary: "".to_owned(),
+            summary: "".to_owned(),
+            cast: vec![],
+            crew: vec![],
         }
     }
 
@@ -98,7 +189,7 @@ impl MovieData {
         &self.id
     }
 
-    // endregion 
+    // endregion
 
     // region: ------ SETTERS -----
 
@@ -152,8 +243,38 @@ impl MovieData {
         self
     }
 
-    pub fn set_sumary(&mut self, new_sumary: &str) -> &mut Self {
-        self.sumary = new_sumary.to_owned();
+    pub fn set_summary(&mut self, new_summary: &str) -> &mut Self {
+        self.summary = new_summary.to_owned();
+        self
+    }
+
+    pub fn push_cast(&mut self, new_cast: Cast) -> &mut Self {
+        self.cast.push(new_cast);
+        self
+    }
+
+    pub fn pop_cast(&mut self) -> &mut Self {
+        self.cast.pop();
+        self
+    }
+
+    pub fn remove_cast(&mut self, index: usize) -> &mut Self {
+        self.cast.remove(index);
+        self
+    }
+
+    pub fn push_crew(&mut self, new_crew: Crew) -> &mut Self {
+        self.crew.push(new_crew);
+        self
+    }
+
+    pub fn pop_crew(&mut self) -> &mut Self {
+        self.crew.pop();
+        self
+    }
+
+    pub fn remove_crew(&mut self, index: usize) -> &mut Self {
+        self.crew.remove(index);
         self
     }
     // endregion
