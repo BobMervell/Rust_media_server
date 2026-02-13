@@ -10,18 +10,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // let mut movies: Vec<MovieData> = smb_explorer.fetch_movies().await;
 
     let client = TMDBClient::new();
-    let movie_test = MovieData::new("/iron man (2008) [test].mp4".to_string());
+    let movie_test = MovieData::new("iron man (2008) [test].mp4".to_string());
     let mut movies: Vec<MovieData> = Vec::new();
     movies.push(movie_test);
 
     match client {
         Ok(ref client) => {
             for movie_data in movies.iter_mut() {
-                println!("a");
                 update_movie_basics(movie_data, client).await;
-                println!("b");
                 update_movie_details(movie_data, client).await;
-                println!("c: {}", movie_data);
+                println!("{}", movie_data);
             }
         }
         Err(ref e) => {
