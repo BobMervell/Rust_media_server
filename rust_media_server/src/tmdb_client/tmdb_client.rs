@@ -1,3 +1,4 @@
+use crate::movie_data::movie_data::{Cast, Crew};
 use reqwest::{
     Client,
     header::{ACCEPT, AUTHORIZATION, HeaderMap, HeaderValue},
@@ -101,6 +102,23 @@ impl DetailsGenres {
     }
 }
 // endregion
+
+// region: CreditMovieStructs
+#[derive(Deserialize, Debug, Clone)]
+pub struct CreditsMovie {
+    cast: Vec<Cast>,
+    crew: Vec<Crew>,
+}
+impl CreditsMovie {
+    pub fn credits_cast(&self) -> &Vec<Cast> {
+        &self.cast
+    }
+    pub fn credits_crew(&self) -> &Vec<Crew> {
+        &self.crew
+    }
+}
+// endregion
+
 pub struct TMDBClient {
     client: Client,
 }
@@ -194,6 +212,19 @@ impl TMDBClient {
             .send()
             .await?;
         let body_json = response.json::<DetailsMovie>().await?;
+        Ok(body_json)
+    }
+
+    pub async fn fetch_movie_credits(&self, movie_id: u32) -> Result<CreditsMovie, reqwest::Error> {
+        let response = self
+            .client
+            .get(format!(
+                "{}/movie/{}/credits?language=en-US",
+                TMDB_BASE_URL, &movie_id
+            ))
+            .send()
+            .await?;
+        let body_json = response.json::<CreditsMovie>().await?;
         Ok(body_json)
     }
 }

@@ -1,8 +1,11 @@
+use rust_media_server::data_parser::api_response_parser::{
+    update_movie_basics, update_movie_credits, update_movie_details,
+};
 use rust_media_server::tmdb_client::tmdb_client::TMDBClient;
 use rust_media_server::{
     directory_explorer::smb_explorer::SmbExplorer, movie_data::movie_data::MovieData,
 };
-use std::{io, u32};
+use std::io;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -19,6 +22,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             for movie_data in movies.iter_mut() {
                 update_movie_basics(movie_data, client).await;
                 update_movie_details(movie_data, client).await;
+                update_movie_credits(movie_data, client).await;
                 println!("{}", movie_data);
             }
         }
@@ -47,43 +51,4 @@ async fn smb_connect() -> Result<SmbExplorer, Box<dyn std::error::Error>> {
     let password = password.trim_end();
 
     SmbExplorer::new(path.to_owned(), username.to_owned(), password.to_owned()).await
-}
-
-async fn update_movie_basics(movie_data: &mut MovieData, client: &TMDBClient) {
-    let movie_basics = client
-        .get_movie_info(
-            movie_data.file_title(),
-            movie_data.file_year().parse::<u32>().ok(),
-        )
-        .await;
-    match movie_basics {
-        Some(movie_basics) => {
-            movie_data
-                .set_id(movie_basics.id())
-                .set_original_title(movie_basics.original_title())
-                .set_title(movie_basics.title())
-                .set_vote_average(movie_basics.vote_average())
-                .set_release_date(movie_basics.release_date())
-                .set_sumary(movie_basics.overview());
-        }
-        None => {}
-    }
-}
-
-async fn update_movie_details(movie_data: &mut MovieData, client: &TMDBClient) {
-    let movie_details = client.fetch_movie_details(*movie_data.id()).await;
-
-    match movie_details {
-        Ok(movie_details) => {
-            let genres = movie_details
-                .genres()
-                .into_iter()
-                .map(|g| g.name())
-                .collect();
-            movie_data.set_genres(genres);
-        }
-        Err(e) => {
-            println!("{}", e)
-        }
-    }
 }
