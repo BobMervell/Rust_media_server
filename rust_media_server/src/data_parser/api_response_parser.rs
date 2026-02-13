@@ -46,7 +46,9 @@ pub async fn update_movie_credits(movie_data: &mut MovieData, client: &TMDBClien
     match movie_credits {
         Ok(movie_credits) => {
             for cast in movie_credits.credits_cast().iter() {
-                movie_data.push_cast(cast.clone());
+                if !cast.character().contains("uncredited") {
+                    movie_data.push_cast(cast.clone());
+                }
             }
             for crew in movie_credits.credits_crew().iter() {
                 match crew.department() {

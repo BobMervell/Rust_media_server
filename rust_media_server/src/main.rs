@@ -13,7 +13,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // let mut movies: Vec<MovieData> = smb_explorer.fetch_movies().await;
 
     let client = TMDBClient::new();
-    let movie_test = MovieData::new("iron man (2008) [test].mp4".to_string());
+    let movie_test = MovieData::new("la la land (2016)/la la land (2016).mp4".to_string());
     let mut movies: Vec<MovieData> = Vec::new();
     movies.push(movie_test);
 
