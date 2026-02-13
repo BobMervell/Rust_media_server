@@ -1,10 +1,36 @@
-use rust_media_server::directory_explorer::smb_explorer::SmbExplorer;
+use rust_media_server::data_parser::api_response_parser::{
+    update_movie_basics, update_movie_credits, update_movie_details,
+};
+use rust_media_server::tmdb_client::tmdb_client::TMDBClient;
+use rust_media_server::{
+    directory_explorer::smb_explorer::SmbExplorer, movie_data::movie_data::MovieData,
+};
 use std::io;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let smb_explorer: SmbExplorer = smb_connect().await?;
-    smb_explorer.fetch_movies().await;
+    // let smb_explorer: SmbExplorer = smb_connect().await?;
+    // let mut movies: Vec<MovieData> = smb_explorer.fetch_movies().await;
+
+    let client = TMDBClient::new();
+    let movie_test = MovieData::new("la la land (2016)/la la land (2016).mp4".to_string());
+    let mut movies: Vec<MovieData> = Vec::new();
+    movies.push(movie_test);
+
+    match client {
+        Ok(ref client) => {
+            for movie_data in movies.iter_mut() {
+                update_movie_basics(movie_data, client).await;
+                update_movie_details(movie_data, client).await;
+                update_movie_credits(movie_data, client).await;
+                println!("{}", movie_data);
+            }
+        }
+        Err(ref e) => {
+            println!("error: {}", e);
+        }
+    }
+
     Ok(())
 }
 
