@@ -76,7 +76,7 @@ impl MovieData {
         }
     }
 
-    // −−−−− GETTERS −−−−−
+    // region: ----- GETTERS -----
 
     pub fn file_path(&self) -> &str {
         &self.file_path
@@ -97,7 +97,10 @@ impl MovieData {
     pub fn id(&self) -> &u32 {
         &self.id
     }
-    // ------ SETTERS -----
+
+    // endregion 
+
+    // region: ------ SETTERS -----
 
     pub fn set_file_path(&mut self, new_file_path: &str) -> &mut Self {
         self.file_path = new_file_path.to_owned();
@@ -153,4 +156,5 @@ impl MovieData {
         self.sumary = new_sumary.to_owned();
         self
     }
+    // endregion
 }

@@ -7,6 +7,7 @@ use std::{error::Error, io};
 
 const TMDB_BASE_URL: &str = "https://api.themoviedb.org/3";
 
+// region: SearchMovieStructs
 #[derive(Serialize)]
 struct SearchParams<'a> {
     query: &'a str,
@@ -71,7 +72,9 @@ impl MovieSearchResult {
         self.results.iter()
     }
 }
+// endregion
 
+// region: DetailMovieStructs
 #[derive(Deserialize, Debug, Clone)]
 pub struct DetailsMovie {
     genres: Vec<DetailsGenres>,
@@ -97,7 +100,7 @@ impl DetailsGenres {
         self.name.to_string()
     }
 }
-
+// endregion
 pub struct TMDBClient {
     client: Client,
 }
