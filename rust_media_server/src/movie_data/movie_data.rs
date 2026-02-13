@@ -9,7 +9,7 @@ pub struct MovieData {
     id: u32,
     original_title: String,
     title: String,
-    genre_ids: Vec<i32>,
+    genres: Vec<String>,
     vote_average: f32,
     release_date: String,
     sumary: String,
@@ -20,13 +20,13 @@ impl fmt::Display for MovieData {
         write!(
             f,
             "File path:           {}\n\
-             File name:           {}\n\
+             File title:           {}\n\
              File year:           {}\n\
              File optional info:  {}\n\
              ID:                  {}\n\
              Original title:      {}\n\
              Title:               {}\n\
-             Genre IDs:           {:?}\n\
+             Genres:           {:?}\n\
              Vote average:        {:.1}\n\
              Release date:        {}\n\
              Summary:             {}",
@@ -37,7 +37,7 @@ impl fmt::Display for MovieData {
             self.id,
             self.original_title,
             self.title,
-            self.genre_ids,
+            self.genres,
             self.vote_average,
             self.release_date,
             self.sumary
@@ -69,7 +69,7 @@ impl MovieData {
             id: 0,
             original_title: "".to_owned(),
             title: "".to_owned(),
-            genre_ids: vec![],
+            genres: vec![],
             vote_average: 0.0,
             release_date: "".to_owned(),
             sumary: "".to_owned(),
@@ -94,6 +94,9 @@ impl MovieData {
         &self.file_optional_info
     }
 
+    pub fn id(&self) -> &u32 {
+        &self.id
+    }
     // ------ SETTERS -----
 
     pub fn set_file_path(&mut self, new_file_path: &str) -> &mut Self {
@@ -131,8 +134,8 @@ impl MovieData {
         self
     }
 
-    pub fn set_genre_ids(&mut self, new_genre_ids: Vec<i32>) -> &mut Self {
-        self.genre_ids = new_genre_ids;
+    pub fn set_genres(&mut self, new_genres: Vec<String>) -> &mut Self {
+        self.genres = new_genres;
         self
     }
 

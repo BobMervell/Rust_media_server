@@ -72,6 +72,32 @@ impl MovieSearchResult {
     }
 }
 
+#[derive(Deserialize, Debug, Clone)]
+pub struct DetailsMovie {
+    genres: Vec<DetailsGenres>,
+    poster_path: String,
+}
+impl DetailsMovie {
+    pub fn genres(&self) -> Vec<DetailsGenres> {
+        self.genres.clone()
+    }
+    pub fn poster_path(&self) -> String {
+        self.poster_path.clone()
+    }
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct DetailsGenres {
+    #[serde(rename = "id")]
+    _id: i32,
+    name: String,
+}
+impl DetailsGenres {
+    pub fn name(&self) -> String {
+        self.name.to_string()
+    }
+}
+
 pub struct TMDBClient {
     client: Client,
 }
@@ -103,16 +129,17 @@ impl TMDBClient {
         let movie_result = self.fetch_movie_by_name(movie_name, movie_year).await;
 
         match movie_result {
-            Ok(fetch_result) => {
-                if fetch_result.results.len() == 0 {
-                    println!(
-                        "NO RESULT FOUND FOR MOVIE: {}, {:#?}",
-                        movie_name, movie_year
-                    );
-                    return None;
-                }
-                return Some(self.get_most_popular(fetch_result));
+            Ok(fetch_result) if !fetch_result.results.is_empty() => {
+                Some(self.get_most_popular(fetch_result))
             }
+            Ok(_) => {
+                println!(
+                    "NO RESULT FOUND FOR MOVIE: {}, {:#?}",
+                    movie_name, movie_year
+                );
+                None
+            }
+
             Err(e) => {
                 println!("error: {}", e);
                 return None;
@@ -152,5 +179,18 @@ impl TMDBClient {
             }
         }
         return result_movie;
+    }
+
+    pub async fn fetch_movie_details(&self, movie_id: u32) -> Result<DetailsMovie, reqwest::Error> {
+        let response = self
+            .client
+            .get(format!(
+                "{}/movie/{}?language=en-US",
+                TMDB_BASE_URL, &movie_id
+            ))
+            .send()
+            .await?;
+        let body_json = response.json::<DetailsMovie>().await?;
+        Ok(body_json)
     }
 }
