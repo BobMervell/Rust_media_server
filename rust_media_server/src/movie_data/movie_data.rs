@@ -96,6 +96,9 @@ pub struct MovieData {
     vote_average: f32,
     release_date: String,
     summary: String,
+    poster_large: String,
+    poster_snapshot: String,
+    backdrop: String,
     cast: Vec<Cast>,
     crew: Vec<Crew>,
 }
@@ -115,8 +118,11 @@ impl fmt::Display for MovieData {
              Vote average:        {:.1}\n\
              Release date:        {}\n\
              Summary:             {}\n\
-             Cast                 {:?}\n\
-             Crew                 {:?}",
+             Poster large:        {}\n\
+             Poster snapshot:     {}\n\
+             Backdrop:            {}\n\
+             Cast;                {:?}\n\
+             Crew:                {:?}",
             self.file_path,
             self.file_title,
             self.file_year,
@@ -128,6 +134,9 @@ impl fmt::Display for MovieData {
             self.vote_average,
             self.release_date,
             self.summary,
+            self.poster_large,
+            self.poster_snapshot,
+            self.backdrop,
             self.cast,
             self.crew
         )
@@ -162,6 +171,9 @@ impl MovieData {
             vote_average: 0.0,
             release_date: "".to_owned(),
             summary: "".to_owned(),
+            poster_large: "".to_owned(),
+            poster_snapshot: "".to_owned(),
+            backdrop: "".to_owned(),
             cast: vec![],
             crew: vec![],
         }
@@ -185,8 +197,52 @@ impl MovieData {
         &self.file_optional_info
     }
 
-    pub fn id(&self) -> &u32 {
-        &self.id
+    pub fn id(&self) -> u32 {
+        self.id
+    }
+
+    pub fn original_title(&self) -> &str {
+        &self.original_title
+    }
+
+    pub fn title(&self) -> &str {
+        &self.title
+    }
+
+    pub fn genres(&self) -> &[String] {
+        &self.genres
+    }
+
+    pub fn vote_average(&self) -> f32 {
+        self.vote_average
+    }
+
+    pub fn release_date(&self) -> &str {
+        &self.release_date
+    }
+
+    pub fn summary(&self) -> &str {
+        &self.summary
+    }
+
+    pub fn poster_large(&self) -> &str {
+        &self.poster_large
+    }
+
+    pub fn poster_snapshot(&self) -> &str {
+        &self.poster_snapshot
+    }
+
+    pub fn backdrop(&self) -> &str {
+        &self.backdrop
+    }
+
+    pub fn cast(&self) -> &[Cast] {
+        &self.cast
+    }
+
+    pub fn crew(&self) -> &[Crew] {
+        &self.crew
     }
 
     // endregion
@@ -245,6 +301,21 @@ impl MovieData {
 
     pub fn set_summary(&mut self, new_summary: &str) -> &mut Self {
         self.summary = new_summary.to_owned();
+        self
+    }
+
+    pub fn set_poster_large(&mut self, new_poster_large: &str) -> &mut Self {
+        self.poster_large = new_poster_large.to_owned();
+        self
+    }
+
+    pub fn set_poster_snapshot(&mut self, new_poster_snapshot: &str) -> &mut Self {
+        self.poster_snapshot = new_poster_snapshot.to_owned();
+        self
+    }
+
+    pub fn set_backdrop(&mut self, new_backdrop: &str) -> &mut Self {
+        self.backdrop = new_backdrop.to_owned();
         self
     }
 

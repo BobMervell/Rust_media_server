@@ -23,7 +23,7 @@ pub async fn update_movie_basics(movie_data: &mut MovieData, client: &TMDBClient
 }
 
 pub async fn update_movie_details(movie_data: &mut MovieData, client: &TMDBClient) {
-    let movie_details = client.fetch_movie_details(*movie_data.id()).await;
+    let movie_details = client.fetch_movie_details(movie_data.id()).await;
 
     match movie_details {
         Ok(movie_details) => {
@@ -41,7 +41,7 @@ pub async fn update_movie_details(movie_data: &mut MovieData, client: &TMDBClien
 }
 
 pub async fn update_movie_credits(movie_data: &mut MovieData, client: &TMDBClient) {
-    let movie_credits = client.fetch_movie_credits(*movie_data.id()).await;
+    let movie_credits = client.fetch_movie_credits(movie_data.id()).await;
 
     match movie_credits {
         Ok(movie_credits) => {
