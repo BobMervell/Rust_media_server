@@ -20,17 +20,17 @@ struct SearchParams<'a> {
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct SearchedMovie {
-    id: u32,
+    id: i64,
     original_title: String,
     title: String,
-    genre_ids: Vec<i32>,
+    genre_ids: Vec<i64>,
     popularity: f32,
     vote_average: f32,
     release_date: String,
     overview: String,
 }
 impl SearchedMovie {
-    pub fn id(&self) -> u32 {
+    pub fn id(&self) -> i64 {
         self.id
     }
 
@@ -42,7 +42,7 @@ impl SearchedMovie {
         &self.title
     }
 
-    pub fn genre_ids(&self) -> &Vec<i32> {
+    pub fn genre_ids(&self) -> &Vec<i64> {
         &self.genre_ids
     }
 
@@ -191,12 +191,12 @@ impl TMDBClient {
         return result_movie;
     }
 
-    pub async fn fetch_movie_details(&self, movie_id: u32) -> Result<DetailsMovie, reqwest::Error> {
+    pub async fn fetch_movie_details(&self, tmdb_id: i64) -> Result<DetailsMovie, reqwest::Error> {
         let response = self
             .client
             .get(format!(
                 "{}/movie/{}?language=en-US",
-                TMDB_BASE_URL, &movie_id
+                TMDB_BASE_URL, &tmdb_id
             ))
             .send()
             .await?;
@@ -204,15 +204,17 @@ impl TMDBClient {
         Ok(body_json)
     }
 
-    pub async fn fetch_movie_credits(&self, movie_id: u32) -> Result<CreditsMovie, reqwest::Error> {
+    pub async fn fetch_movie_credits(&self, tmdb_id: i64) -> Result<CreditsMovie, reqwest::Error> {
         let response = self
             .client
             .get(format!(
                 "{}/movie/{}/credits?language=en-US",
-                TMDB_BASE_URL, &movie_id
+                TMDB_BASE_URL, &tmdb_id
             ))
             .send()
             .await?;
+
+        println!("{:?}",response);
         let body_json = response.json::<CreditsMovie>().await?;
         Ok(body_json)
     }

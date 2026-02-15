@@ -1,6 +1,6 @@
 use rusqlite::{Connection, Result};
 
-use crate::movie_data::movie_data::MovieData;
+use crate::movie_data::movie_data::{Cast, Crew, Genre, MovieData};
 
 pub struct DataSaver {
     conn: Connection,
@@ -13,6 +13,7 @@ impl DataSaver {
         Ok(Self { conn: conn })
     }
 
+    // region: Create tables
     fn create_index(&self, table: &str, column: &str) {
         // Optionnel mais recommandé : validation simple
         if !is_valid_identifier(table) || !is_valid_identifier(column) {
@@ -81,7 +82,6 @@ impl DataSaver {
 
         self.create_index("Person", "name");
         self.create_index("Person", "job_name");
-
     }
 
     pub fn create_movie_person_table(&mut self) {
@@ -138,6 +138,9 @@ impl DataSaver {
         }
     }
 
+    // endregion
+
+    // region: Insert movie data
     pub fn push_movie(&mut self, m: MovieData) {
         let res = self.conn.execute(
             "
@@ -145,7 +148,7 @@ impl DataSaver {
         release_date, summary, vote_average, poster_large, poster_snapshot, backdrop)
         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
             (
-                m.id(),
+                m.tmdb_id(),
                 m.file_path(),
                 m.file_optional_info(),
                 m.title(),
@@ -162,21 +165,28 @@ impl DataSaver {
         if let Err(e) = res {
             println!("Error pushing data to table movie: {}", e);
         }
+
+        let movie_id = self.conn.last_insert_rowid();
+
+        self.push_credits(movie_id, &m);
+        self.push_genre(movie_id, &m);
     }
 
-    pub fn push_movie_credits(&mut self, m: MovieData) {
+    fn push_credits(&mut self, movie_id: i64, m: &MovieData) {
         for cast in m.cast().iter() {
             let res = self.conn.execute(
                 "INSERT INTO Person ( tmdb_id, name, job_name, character, picture_path)
                 VALUES (?1, ?2, ?3, ?4, ?5)",
                 (
-                    cast.id(),
+                    cast.tmdb_id(),
                     cast.name(),
-                    cast.character(),
                     "actor",
+                    cast.character(),
                     cast.picture_path(),
                 ),
             );
+            let cast_id = self.conn.last_insert_rowid();
+            self.push_movie_cast(cast_id, movie_id);
             if let Err(e) = res {
                 println!("Error pushing data to table person: {}", e);
             }
@@ -186,37 +196,66 @@ impl DataSaver {
             let res = self.conn.execute(
                 "INSERT INTO Person ( tmdb_id, name, job_name, picture_path)
                 VALUES (?1, ?2, ?3, ?4)",
-                (
-                    crew.id(),
-                    crew.name(),
-                    crew.job(),
-                    crew.picture_path(),
-                ),
+                (crew.tmdb_id(), crew.name(), crew.job(), crew.picture_path()),
             );
+            let crew_id = self.conn.last_insert_rowid();
+            self.push_movie_crew(crew_id, movie_id);
+
             if let Err(e) = res {
                 println!("Error pushing data to table person: {}", e);
                 println!("{}", crew)
             }
         }
-
-
     }
 
-    pub fn push_genre(&mut self, m: MovieData) {
+    fn push_genre(&mut self, movie_id: i64, m: &MovieData) {
         for genre in m.genres().iter() {
             let res = self.conn.execute(
                 "INSERT INTO Genre ( id, name)
                 VALUES (?1, ?2)",
-                (
-                    genre.id(),
-                    genre.name(),
-                ),
+                (genre.id(), genre.name()),
             );
+            self.push_movie_genre(genre.id(), movie_id);
             if let Err(e) = res {
                 println!("Error pushing data to table genre: {}", e);
             }
         }
     }
+
+    fn push_movie_cast(&mut self, cast_id: i64, movie_id: i64) {
+        let res = self.conn.execute(
+            "INSERT INTO Movie_Person ( movie_id, person_id)
+                VALUES (?1, ?2)",
+            (movie_id, cast_id),
+        );
+        if let Err(e) = res {
+            println!("Error pushing data to table movie_person (cast): {}", e);
+        }
+    }
+
+    fn push_movie_crew(&mut self, crew_id: i64, movie_id: i64) {
+        let res = self.conn.execute(
+            "INSERT INTO Movie_Person ( movie_id, person_id)
+                VALUES (?1, ?2)",
+            (movie_id, crew_id),
+        );
+        if let Err(e) = res {
+            println!("Error pushing data to table movie_person (crew): {}", e);
+        }
+    }
+
+    fn push_movie_genre(&mut self, genre_id: i64, movie_id: i64) {
+        let res = self.conn.execute(
+            "INSERT INTO Movie_Genre ( movie_id, genre_id)
+                VALUES (?1, ?2)",
+            (movie_id, genre_id),
+        );
+        if let Err(e) = res {
+            println!("Error pushing data to table movie_genre: {}", e);
+        }
+    }
+
+    // endregion
 }
 
 fn is_valid_identifier(name: &str) -> bool {

@@ -11,7 +11,7 @@ pub async fn update_movie_basics(movie_data: &mut MovieData, client: &TMDBClient
     match movie_basics {
         Some(movie_basics) => {
             movie_data
-                .set_id(movie_basics.id())
+                .set_tmdb_id(movie_basics.id())
                 .set_original_title(movie_basics.original_title())
                 .set_title(movie_basics.title())
                 .set_vote_average(movie_basics.vote_average())
@@ -23,19 +23,19 @@ pub async fn update_movie_basics(movie_data: &mut MovieData, client: &TMDBClient
 }
 
 pub async fn update_movie_details(movie_data: &mut MovieData, client: &TMDBClient) {
-    let movie_details = client.fetch_movie_details(movie_data.id()).await;
+    let movie_details = client.fetch_movie_details(movie_data.tmdb_id()).await;
     match movie_details {
         Ok(movie_details) => {
             movie_data.set_genres(movie_details.genres());
         }
         Err(e) => {
-            println!("{}", e)
+            println!("test {}", e)
         }
     }
 }
 
 pub async fn update_movie_credits(movie_data: &mut MovieData, client: &TMDBClient) {
-    let movie_credits = client.fetch_movie_credits(movie_data.id()).await;
+    let movie_credits = client.fetch_movie_credits(movie_data.tmdb_id()).await;
 
     match movie_credits {
         Ok(movie_credits) => {
@@ -91,7 +91,7 @@ pub async fn update_movie_credits(movie_data: &mut MovieData, client: &TMDBClien
             }
         }
         Err(e) => {
-            println!("{}", e)
+            println!("Credits error: {}", e)
         }
     }
 }
