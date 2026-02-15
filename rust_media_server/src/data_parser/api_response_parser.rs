@@ -24,15 +24,9 @@ pub async fn update_movie_basics(movie_data: &mut MovieData, client: &TMDBClient
 
 pub async fn update_movie_details(movie_data: &mut MovieData, client: &TMDBClient) {
     let movie_details = client.fetch_movie_details(movie_data.id()).await;
-
     match movie_details {
         Ok(movie_details) => {
-            let genres = movie_details
-                .genres()
-                .into_iter()
-                .map(|g| g.name())
-                .collect();
-            movie_data.set_genres(genres);
+            movie_data.set_genres(movie_details.genres());
         }
         Err(e) => {
             println!("{}", e)

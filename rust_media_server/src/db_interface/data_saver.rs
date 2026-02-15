@@ -104,7 +104,39 @@ impl DataSaver {
         }
     }
 
-    
+    pub fn create_genre_table(&mut self) {
+        let res = self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS Genre (
+                id INTEGER PRIMARY KEY,
+                name TEXT NOT NULL);
+            ",
+            (),
+        );
+        if let Err(e) = res {
+            println!("Error creation table Genre: {}", e);
+        }
+        self.create_index("Genre", "name");
+    }
+
+    pub fn create_movie_genre_table(&mut self) {
+        let res = self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS Movie_Genre (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                movie_id INTEGER NOT NULL,
+                genre_id INTEGER NOT NULL,
+                FOREIGN KEY (movie_id) REFERENCES Movie(id),
+                FOREIGN KEY (genre_id) REFERENCES Genre(id)
+            );",
+            (),
+        );
+        match res {
+            Ok(_) => {}
+
+            Err(e) => {
+                println!("{}", e)
+            }
+        }
+    }
 
     pub fn push_movie(&mut self, m: MovieData) {
         let res = self.conn.execute(
@@ -146,7 +178,7 @@ impl DataSaver {
                 ),
             );
             if let Err(e) = res {
-                println!("Error pushing data to table movie: {}", e);
+                println!("Error pushing data to table person: {}", e);
             }
         }
 
@@ -162,11 +194,28 @@ impl DataSaver {
                 ),
             );
             if let Err(e) = res {
-                println!("Error pushing data to table movie: {}", e);
+                println!("Error pushing data to table person: {}", e);
+                println!("{}", crew)
             }
         }
 
 
+    }
+
+    pub fn push_genre(&mut self, m: MovieData) {
+        for genre in m.genres().iter() {
+            let res = self.conn.execute(
+                "INSERT INTO Genre ( id, name)
+                VALUES (?1, ?2)",
+                (
+                    genre.id(),
+                    genre.name(),
+                ),
+            );
+            if let Err(e) = res {
+                println!("Error pushing data to table genre: {}", e);
+            }
+        }
     }
 }
 

@@ -1,6 +1,41 @@
 use serde::Deserialize;
 use std::fmt;
 
+
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct Genre {
+    id: i32,
+    name: String,
+}
+impl fmt::Display for Genre {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Genre ID:           {}\n\
+             name:                {}",
+            self.id, self.name
+        )
+    }
+}
+impl Genre {
+    pub fn id(&self) -> i32 {
+        self.id
+    }
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+}
+
+
+
+
+
+
+
+
+
+
 #[derive(Deserialize, Debug, Clone)]
 pub struct Cast {
     id: i32,
@@ -92,7 +127,7 @@ pub struct MovieData {
     id: u32,
     original_title: String,
     title: String,
-    genres: Vec<String>,
+    genres: Vec<Genre>,
     vote_average: f32,
     release_date: String,
     summary: String,
@@ -209,7 +244,7 @@ impl MovieData {
         &self.title
     }
 
-    pub fn genres(&self) -> &[String] {
+    pub fn genres(&self) -> &[Genre] {
         &self.genres
     }
 
@@ -284,7 +319,7 @@ impl MovieData {
         self
     }
 
-    pub fn set_genres(&mut self, new_genres: Vec<String>) -> &mut Self {
+    pub fn set_genres(&mut self, new_genres: Vec<Genre>) -> &mut Self {
         self.genres = new_genres;
         self
     }
