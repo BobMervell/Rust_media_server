@@ -28,7 +28,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     update_movie_credits(movie_data, client).await;
                     println!("{}", movie_data);
                     data_saver.create_movie_table();
-                    data_saver.push_movie(movie_data.clone())
+                    data_saver.create_person_table();
+                    data_saver.create_movie_person_table();
+                    data_saver.push_movie(movie_data.clone());
+                    data_saver.push_movie_credits(movie_data.clone());
                 }
             }
             Err(e) => {
