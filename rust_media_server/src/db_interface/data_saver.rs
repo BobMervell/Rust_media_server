@@ -37,7 +37,7 @@ impl DataSaver {
     pub fn create_movie_table(&mut self) {
         let res = self.conn.execute(
             "CREATE TABLE IF NOT EXISTS Movie (
-                movie_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 tmdb_id INTEGER,
                 file_path TEXT NOT NULL,
                 file_optional_info TEXT,
@@ -65,7 +65,7 @@ impl DataSaver {
     pub fn create_person_table(&mut self) {
         let res = self.conn.execute(
             "CREATE TABLE IF NOT EXISTS Person (
-                person_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 tmdb_id INTEGER,
                 name TEXT NOT NULL,
                 character TEXT,
@@ -78,16 +78,20 @@ impl DataSaver {
         if let Err(e) = res {
             println!("Error creation table Person: {}", e);
         }
+
+        self.create_index("Person", "name");
+        self.create_index("Person", "job_name");
+
     }
 
     pub fn create_movie_person_table(&mut self) {
         let res = self.conn.execute(
             "CREATE TABLE IF NOT EXISTS Movie_Person (
-                movie_person_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 movie_id INTEGER NOT NULL,
                 person_id INTEGER NOT NULL,
-                FOREIGN KEY (movie_id) REFERENCES Movie(movie_id),
-                FOREIGN KEY (person_id) REFERENCES Person(person_id)
+                FOREIGN KEY (movie_id) REFERENCES Movie(id),
+                FOREIGN KEY (person_id) REFERENCES Person(id)
             );",
             (),
         );
@@ -99,6 +103,8 @@ impl DataSaver {
             }
         }
     }
+
+    
 
     pub fn push_movie(&mut self, m: MovieData) {
         let res = self.conn.execute(
