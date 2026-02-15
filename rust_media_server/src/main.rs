@@ -30,8 +30,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     data_saver.create_movie_table();
                     data_saver.create_person_table();
                     data_saver.create_movie_person_table();
+                    data_saver.create_genre_table();
+                    data_saver.create_movie_genre_table();
                     data_saver.push_movie(movie_data.clone());
                     data_saver.push_movie_credits(movie_data.clone());
+                    data_saver.push_genre(movie_data.clone());
                 }
             }
             Err(e) => {

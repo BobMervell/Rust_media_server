@@ -1,4 +1,4 @@
-use crate::movie_data::movie_data::{Cast, Crew};
+use crate::movie_data::movie_data::{Cast, Crew, Genre};
 use reqwest::{
     Client,
     header::{ACCEPT, AUTHORIZATION, HeaderMap, HeaderValue},
@@ -78,11 +78,11 @@ impl MovieSearchResult {
 // region: DetailMovieStructs
 #[derive(Deserialize, Debug, Clone)]
 pub struct DetailsMovie {
-    genres: Vec<DetailsGenres>,
+    genres: Vec<Genre>,
     poster_path: String,
 }
 impl DetailsMovie {
-    pub fn genres(&self) -> Vec<DetailsGenres> {
+    pub fn genres(&self) -> Vec<Genre> {
         self.genres.clone()
     }
     pub fn poster_path(&self) -> String {
@@ -90,17 +90,6 @@ impl DetailsMovie {
     }
 }
 
-#[derive(Deserialize, Debug, Clone)]
-pub struct DetailsGenres {
-    #[serde(rename = "id")]
-    _id: i32,
-    name: String,
-}
-impl DetailsGenres {
-    pub fn name(&self) -> String {
-        self.name.to_string()
-    }
-}
 // endregion
 
 // region: CreditMovieStructs
