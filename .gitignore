@@ -6,3 +6,6 @@ tmp/
 .vscode
 target
 *.lock
+*.drawio
+*.drawio.bkp
+*.db

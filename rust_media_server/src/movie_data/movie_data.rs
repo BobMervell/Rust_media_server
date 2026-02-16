@@ -2,8 +2,35 @@ use serde::Deserialize;
 use std::fmt;
 
 #[derive(Deserialize, Debug, Clone)]
+pub struct Genre {
+    id: i64,
+    name: String,
+}
+impl fmt::Display for Genre {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Genre ID:           {}\n\
+             name:                {}",
+            self.id, self.name
+        )
+    }
+}
+impl Genre {
+    pub fn id(&self) -> i64 {
+        self.id
+    }
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+}
+
+#[derive(Deserialize, Debug, Clone)]
 pub struct Cast {
-    id: i32,
+    #[serde(skip_deserializing)]
+    id: i64,
+    #[serde(rename = "id")]
+    tmdb_id: i64,
     name: String,
     #[serde(rename = "profile_path")]
     picture_path: Option<String>,
@@ -15,18 +42,22 @@ impl fmt::Display for Cast {
         write!(
             f,
             "Person ID:           {}\n\
+             Tmdb_id:             {}\n\
              Name:                {}\n\
              Picture path:        {:?}\n\
              Character:           {}\n\
              Order:               {}",
-            self.id, self.name, self.picture_path, self.character, self.order
+            self.id, self.tmdb_id, self.name, self.picture_path, self.character, self.order
         )
     }
 }
 
 impl Cast {
-    pub fn id(&self) -> i32 {
+    pub fn id(&self) -> i64 {
         self.id
+    }
+    pub fn tmdb_id(&self) -> i64 {
+        self.tmdb_id
     }
     pub fn name(&self) -> &str {
         &self.name
@@ -44,7 +75,10 @@ impl Cast {
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Crew {
-    id: i32,
+    #[serde(skip_deserializing)]
+    id: i64,
+    #[serde(rename = "id")]
+    tmdb_id: i64,
     name: String,
     #[serde(rename = "profile_path")]
     picture_path: Option<String>,
@@ -56,18 +90,22 @@ impl fmt::Display for Crew {
         write!(
             f,
             "Person ID:           {}\n\
+             Tmdb_id:             {}\n\
              Name:                {}\n\
              Picture path:        {:?}\n\
              Character:           {}\n\
              Order:               {}",
-            self.id, self.name, self.picture_path, self.department, self.job
+            self.id, self.tmdb_id, self.name, self.picture_path, self.department, self.job
         )
     }
 }
 
 impl Crew {
-    pub fn id(&self) -> i32 {
+    pub fn id(&self) -> i64 {
         self.id
+    }
+    pub fn tmdb_id(&self) -> i64 {
+        self.tmdb_id
     }
     pub fn name(&self) -> &str {
         &self.name
@@ -85,17 +123,21 @@ impl Crew {
 
 #[derive(Debug, Clone)]
 pub struct MovieData {
+    id: i64,
     file_path: String,
     file_title: String,
     file_year: String,
     file_optional_info: String,
-    id: u32,
+    tmdb_id: i64,
     original_title: String,
     title: String,
-    genres: Vec<String>,
+    genres: Vec<Genre>,
     vote_average: f32,
     release_date: String,
     summary: String,
+    poster_large: String,
+    poster_snapshot: String,
+    backdrop: String,
     cast: Vec<Cast>,
     crew: Vec<Crew>,
 }
@@ -104,30 +146,38 @@ impl fmt::Display for MovieData {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "File path:           {}\n\
+            "ID:                  {}\n\
+             File path:           {}\n\
              File title:           {}\n\
              File year:           {}\n\
              File optional info:  {}\n\
-             ID:                  {}\n\
+             tmdb_id:             {}\n\
              Original title:      {}\n\
              Title:               {}\n\
              Genres:           {:?}\n\
              Vote average:        {:.1}\n\
              Release date:        {}\n\
              Summary:             {}\n\
-             Cast                 {:?}\n\
-             Crew                 {:?}",
+             Poster large:        {}\n\
+             Poster snapshot:     {}\n\
+             Backdrop:            {}\n\
+             Cast;                {:?}\n\
+             Crew:                {:?}",
+            self.id,
             self.file_path,
             self.file_title,
             self.file_year,
             self.file_optional_info,
-            self.id,
+            self.tmdb_id,
             self.original_title,
             self.title,
             self.genres,
             self.vote_average,
             self.release_date,
             self.summary,
+            self.poster_large,
+            self.poster_snapshot,
+            self.backdrop,
             self.cast,
             self.crew
         )
@@ -151,23 +201,31 @@ impl MovieData {
             }
         }
         Self {
+            id: 0,
             file_path: path.to_owned().to_lowercase(),
             file_title: file_title.to_owned().to_lowercase(),
             file_year: file_year.to_owned().to_lowercase(),
             file_optional_info: file_optional_info.to_owned().to_lowercase(),
-            id: 0,
+            tmdb_id: 0,
             original_title: "".to_owned(),
             title: "".to_owned(),
             genres: vec![],
             vote_average: 0.0,
             release_date: "".to_owned(),
             summary: "".to_owned(),
+            poster_large: "".to_owned(),
+            poster_snapshot: "".to_owned(),
+            backdrop: "".to_owned(),
             cast: vec![],
             crew: vec![],
         }
     }
 
     // region: ----- GETTERS -----
+
+    pub fn id(&self) -> i64 {
+        self.id
+    }
 
     pub fn file_path(&self) -> &str {
         &self.file_path
@@ -185,13 +243,62 @@ impl MovieData {
         &self.file_optional_info
     }
 
-    pub fn id(&self) -> &u32 {
-        &self.id
+    pub fn tmdb_id(&self) -> i64 {
+        self.tmdb_id
+    }
+
+    pub fn original_title(&self) -> &str {
+        &self.original_title
+    }
+
+    pub fn title(&self) -> &str {
+        &self.title
+    }
+
+    pub fn genres(&self) -> &[Genre] {
+        &self.genres
+    }
+
+    pub fn vote_average(&self) -> f32 {
+        self.vote_average
+    }
+
+    pub fn release_date(&self) -> &str {
+        &self.release_date
+    }
+
+    pub fn summary(&self) -> &str {
+        &self.summary
+    }
+
+    pub fn poster_large(&self) -> &str {
+        &self.poster_large
+    }
+
+    pub fn poster_snapshot(&self) -> &str {
+        &self.poster_snapshot
+    }
+
+    pub fn backdrop(&self) -> &str {
+        &self.backdrop
+    }
+
+    pub fn cast(&self) -> &[Cast] {
+        &self.cast
+    }
+
+    pub fn crew(&self) -> &[Crew] {
+        &self.crew
     }
 
     // endregion
 
     // region: ------ SETTERS -----
+
+    pub fn set_id(&mut self, new_id: i64) -> &mut Self {
+        self.id = new_id;
+        self
+    }
 
     pub fn set_file_path(&mut self, new_file_path: &str) -> &mut Self {
         self.file_path = new_file_path.to_owned();
@@ -213,8 +320,8 @@ impl MovieData {
         self
     }
 
-    pub fn set_id(&mut self, new_id: u32) -> &mut Self {
-        self.id = new_id;
+    pub fn set_tmdb_id(&mut self, new_id: i64) -> &mut Self {
+        self.tmdb_id = new_id;
         self
     }
 
@@ -228,7 +335,7 @@ impl MovieData {
         self
     }
 
-    pub fn set_genres(&mut self, new_genres: Vec<String>) -> &mut Self {
+    pub fn set_genres(&mut self, new_genres: Vec<Genre>) -> &mut Self {
         self.genres = new_genres;
         self
     }
@@ -245,6 +352,21 @@ impl MovieData {
 
     pub fn set_summary(&mut self, new_summary: &str) -> &mut Self {
         self.summary = new_summary.to_owned();
+        self
+    }
+
+    pub fn set_poster_large(&mut self, new_poster_large: &str) -> &mut Self {
+        self.poster_large = new_poster_large.to_owned();
+        self
+    }
+
+    pub fn set_poster_snapshot(&mut self, new_poster_snapshot: &str) -> &mut Self {
+        self.poster_snapshot = new_poster_snapshot.to_owned();
+        self
+    }
+
+    pub fn set_backdrop(&mut self, new_backdrop: &str) -> &mut Self {
+        self.backdrop = new_backdrop.to_owned();
         self
     }
 
