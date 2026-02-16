@@ -214,7 +214,7 @@ impl TMDBClient {
             .send()
             .await?;
 
-        println!("{:?}",response);
+        println!("{:?}", response);
         let body_json = response.json::<CreditsMovie>().await?;
         Ok(body_json)
     }

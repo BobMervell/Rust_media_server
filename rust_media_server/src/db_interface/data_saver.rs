@@ -1,6 +1,6 @@
 use rusqlite::{Connection, Result};
 
-use crate::movie_data::movie_data::{Cast, Crew, Genre, MovieData};
+use crate::movie_data::movie_data::MovieData;
 
 pub struct DataSaver {
     conn: Connection,
@@ -15,12 +15,6 @@ impl DataSaver {
 
     // region: Create tables
     fn create_index(&self, table: &str, column: &str) {
-        // Optionnel mais recommandé : validation simple
-        if !is_valid_identifier(table) || !is_valid_identifier(column) {
-            println!("Invalid table or column name");
-            return;
-        }
-
         let index_name = format!("idx_{}_{}", table.to_lowercase(), column.to_lowercase());
 
         let query = format!(
@@ -40,7 +34,7 @@ impl DataSaver {
             "CREATE TABLE IF NOT EXISTS Movie (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 tmdb_id INTEGER,
-                file_path TEXT NOT NULL,
+                file_path TEXT NOT NULL UNIQUE,
                 file_optional_info TEXT,
                 title TEXT NOT NULL,
                 original_title TEXT NOT NULL,
@@ -68,10 +62,12 @@ impl DataSaver {
             "CREATE TABLE IF NOT EXISTS Person (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 tmdb_id INTEGER,
+                movie_id INTEGER,
                 name TEXT NOT NULL,
                 character TEXT,
                 job_name TEXT NOT NULL,
-                picture_path TEXT
+                picture_path TEXT,
+                FOREIGN KEY (movie_id) REFERENCES Movie(id)
             );
             ",
             (),
@@ -82,25 +78,17 @@ impl DataSaver {
 
         self.create_index("Person", "name");
         self.create_index("Person", "job_name");
-    }
 
-    pub fn create_movie_person_table(&mut self) {
         let res = self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS Movie_Person (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                movie_id INTEGER NOT NULL,
-                person_id INTEGER NOT NULL,
-                FOREIGN KEY (movie_id) REFERENCES Movie(id),
-                FOREIGN KEY (person_id) REFERENCES Person(id)
-            );",
-            (),
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_cast_tmdb_movie_character_job
+         ON Person (tmdb_id, movie_id, character, job_name);",
+            [],
         );
-        match res {
-            Ok(_) => {}
-
-            Err(e) => {
-                println!("{}", e)
-            }
+        if let Err(e) = res {
+            println!(
+                "Error creating index composite index for person table: {}",
+                e
+            );
         }
     }
 
@@ -115,7 +103,6 @@ impl DataSaver {
         if let Err(e) = res {
             println!("Error creation table Genre: {}", e);
         }
-        self.create_index("Genre", "name");
     }
 
     pub fn create_movie_genre_table(&mut self) {
@@ -129,12 +116,22 @@ impl DataSaver {
             );",
             (),
         );
-        match res {
-            Ok(_) => {}
 
-            Err(e) => {
-                println!("{}", e)
-            }
+        if let Err(e) = res {
+            println!("{}", e)
+        }
+
+        self.create_index("Genre", "name");
+        let res = self.conn.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_movie_genre
+         ON Movie_Genre (movie_id, genre_id);",
+            [],
+        );
+        if let Err(e) = res {
+            println!(
+                "Error creating index composite index for genre_movie table: {}",
+                e
+            );
         }
     }
 
@@ -146,7 +143,8 @@ impl DataSaver {
             "
         INSERT INTO Movie ( tmdb_id, file_path, file_optional_info, title, original_title,
         release_date, summary, vote_average, poster_large, poster_snapshot, backdrop)
-        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
+        ON CONFLICT(file_path) DO NOTHING;",
             (
                 m.tmdb_id(),
                 m.file_path(),
@@ -166,27 +164,38 @@ impl DataSaver {
             println!("Error pushing data to table movie: {}", e);
         }
 
-        let movie_id = self.conn.last_insert_rowid();
+        let res = self.conn.query_row(
+            "SELECT id FROM Movie WHERE file_path = ?1",
+            (m.file_path(),),
+            |row| row.get(0),
+        );
+        match res {
+            Ok(movie_id) => {
+                self.push_credits(movie_id, &m);
+                self.push_genre(movie_id, &m);
+            }
 
-        self.push_credits(movie_id, &m);
-        self.push_genre(movie_id, &m);
+            Err(e) => {
+                println!("Error getting movie_idfrom table movie: {}", e);
+            }
+        }
     }
 
     fn push_credits(&mut self, movie_id: i64, m: &MovieData) {
         for cast in m.cast().iter() {
             let res = self.conn.execute(
-                "INSERT INTO Person ( tmdb_id, name, job_name, character, picture_path)
-                VALUES (?1, ?2, ?3, ?4, ?5)",
+                "INSERT INTO Person ( tmdb_id, movie_id, name, job_name, character, picture_path)
+                VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+                ON CONFLICT(tmdb_id, movie_id, character, job_name) DO NOTHING;",
                 (
                     cast.tmdb_id(),
+                    movie_id,
                     cast.name(),
                     "actor",
                     cast.character(),
                     cast.picture_path(),
                 ),
             );
-            let cast_id = self.conn.last_insert_rowid();
-            self.push_movie_cast(cast_id, movie_id);
             if let Err(e) = res {
                 println!("Error pushing data to table person: {}", e);
             }
@@ -194,13 +203,18 @@ impl DataSaver {
 
         for crew in m.crew().iter() {
             let res = self.conn.execute(
-                "INSERT INTO Person ( tmdb_id, name, job_name, picture_path)
-                VALUES (?1, ?2, ?3, ?4)",
-                (crew.tmdb_id(), crew.name(), crew.job(), crew.picture_path()),
+                "INSERT INTO Person ( tmdb_id, movie_id, name, job_name, character, picture_path)
+                VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+                ON CONFLICT(tmdb_id, movie_id, character, job_name) DO NOTHING;",
+                (
+                    crew.tmdb_id(),
+                    movie_id,
+                    crew.name(),
+                    crew.job(),
+                    "N/A",
+                    crew.picture_path(),
+                ),
             );
-            let crew_id = self.conn.last_insert_rowid();
-            self.push_movie_crew(crew_id, movie_id);
-
             if let Err(e) = res {
                 println!("Error pushing data to table person: {}", e);
                 println!("{}", crew)
@@ -212,7 +226,8 @@ impl DataSaver {
         for genre in m.genres().iter() {
             let res = self.conn.execute(
                 "INSERT INTO Genre ( id, name)
-                VALUES (?1, ?2)",
+                VALUES (?1, ?2)
+                ON CONFLICT(id) DO NOTHING;",
                 (genre.id(), genre.name()),
             );
             self.push_movie_genre(genre.id(), movie_id);
@@ -222,32 +237,11 @@ impl DataSaver {
         }
     }
 
-    fn push_movie_cast(&mut self, cast_id: i64, movie_id: i64) {
-        let res = self.conn.execute(
-            "INSERT INTO Movie_Person ( movie_id, person_id)
-                VALUES (?1, ?2)",
-            (movie_id, cast_id),
-        );
-        if let Err(e) = res {
-            println!("Error pushing data to table movie_person (cast): {}", e);
-        }
-    }
-
-    fn push_movie_crew(&mut self, crew_id: i64, movie_id: i64) {
-        let res = self.conn.execute(
-            "INSERT INTO Movie_Person ( movie_id, person_id)
-                VALUES (?1, ?2)",
-            (movie_id, crew_id),
-        );
-        if let Err(e) = res {
-            println!("Error pushing data to table movie_person (crew): {}", e);
-        }
-    }
-
     fn push_movie_genre(&mut self, genre_id: i64, movie_id: i64) {
         let res = self.conn.execute(
             "INSERT INTO Movie_Genre ( movie_id, genre_id)
-                VALUES (?1, ?2)",
+                VALUES (?1, ?2)
+                ON CONFLICT(movie_id, genre_id) DO NOTHING;",
             (movie_id, genre_id),
         );
         if let Err(e) = res {
