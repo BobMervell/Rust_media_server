@@ -1,4 +1,4 @@
-use rusqlite::{Connection, Result};
+use rusqlite::{Connection, Result, Transaction};
 
 use crate::movie_data::movie_data::MovieData;
 
@@ -139,7 +139,9 @@ impl DataSaver {
 
     // region: Insert movie data
     pub fn push_movie(&mut self, m: MovieData) {
-        let res = self.conn.execute(
+        let tx = self.conn.transaction().unwrap();
+
+        let res = tx.execute(
             "
         INSERT INTO Movie ( tmdb_id, file_path, file_optional_info, title, original_title,
         release_date, summary, vote_average, poster_large, poster_snapshot, backdrop)
@@ -164,81 +166,91 @@ impl DataSaver {
             println!("Error pushing data to table movie: {}", e);
         }
 
-        let res = self.conn.query_row(
+        let res = tx.query_row(
             "SELECT id FROM Movie WHERE file_path = ?1",
             (m.file_path(),),
             |row| row.get(0),
         );
         match res {
             Ok(movie_id) => {
-                self.push_credits(movie_id, &m);
-                self.push_genre(movie_id, &m);
+                DataSaver::push_credits(movie_id, &m, &tx);
+                DataSaver::push_genre(movie_id, &m, &tx);
             }
 
             Err(e) => {
                 println!("Error getting movie_idfrom table movie: {}", e);
             }
         }
-    }
 
-    fn push_credits(&mut self, movie_id: i64, m: &MovieData) {
-        for cast in m.cast().iter() {
-            let res = self.conn.execute(
-                "INSERT INTO Person ( tmdb_id, movie_id, name, job_name, character, picture_path)
-                VALUES (?1, ?2, ?3, ?4, ?5, ?6)
-                ON CONFLICT(tmdb_id, movie_id, character, job_name) DO NOTHING;",
-                (
-                    cast.tmdb_id(),
-                    movie_id,
-                    cast.name(),
-                    "actor",
-                    cast.character(),
-                    cast.picture_path(),
-                ),
-            );
-            if let Err(e) = res {
-                println!("Error pushing data to table person: {}", e);
-            }
-        }
+        let res = tx.commit();
 
-        for crew in m.crew().iter() {
-            let res = self.conn.execute(
-                "INSERT INTO Person ( tmdb_id, movie_id, name, job_name, character, picture_path)
-                VALUES (?1, ?2, ?3, ?4, ?5, ?6)
-                ON CONFLICT(tmdb_id, movie_id, character, job_name) DO NOTHING;",
-                (
-                    crew.tmdb_id(),
-                    movie_id,
-                    crew.name(),
-                    crew.job(),
-                    "N/A",
-                    crew.picture_path(),
-                ),
-            );
-            if let Err(e) = res {
-                println!("Error pushing data to table person: {}", e);
-                println!("{}", crew)
-            }
+        if let Err(e) = res {
+            println!("error commiting: {}", e)
         }
     }
 
-    fn push_genre(&mut self, movie_id: i64, m: &MovieData) {
+    fn push_credits(movie_id: i64, m: &MovieData, tx: &Transaction) {
+        let res = tx.prepare(
+            "INSERT INTO Person (tmdb_id, movie_id, name, job_name, character, picture_path)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+         ON CONFLICT(tmdb_id, movie_id, character, job_name) DO NOTHING",
+        );
+
+        match res {
+            Ok(mut statement) => {
+                for cast in m.cast().iter() {
+                    let res = statement.execute((
+                        cast.tmdb_id(),
+                        movie_id,
+                        cast.name(),
+                        "actor",
+                        cast.character(),
+                        cast.picture_path(),
+                    ));
+                    if let Err(e) = res {
+                        println!("Error pushing data to table person: {}", e);
+                    }
+                }
+
+                for crew in m.crew().iter() {
+                    let res = statement.execute((
+                        crew.tmdb_id(),
+                        movie_id,
+                        crew.name(),
+                        crew.job(),
+                        "N/A",
+                        crew.picture_path(),
+                    ));
+                    if let Err(e) = res {
+                        println!("Error pushing data to table person: {}", e);
+                        println!("{}", crew)
+                    }
+                }
+            }
+
+            Err(e) => {
+                println!("Error preparing statement for credit push: {}", e)
+            }
+        }
+    }
+
+    fn push_genre(movie_id: i64, m: &MovieData, tx: &Transaction) {
         for genre in m.genres().iter() {
-            let res = self.conn.execute(
+            let res = tx.execute(
                 "INSERT INTO Genre ( id, name)
                 VALUES (?1, ?2)
                 ON CONFLICT(id) DO NOTHING;",
                 (genre.id(), genre.name()),
             );
-            self.push_movie_genre(genre.id(), movie_id);
+            DataSaver::push_movie_genre(genre.id(), movie_id, tx);
             if let Err(e) = res {
                 println!("Error pushing data to table genre: {}", e);
             }
         }
     }
 
-    fn push_movie_genre(&mut self, genre_id: i64, movie_id: i64) {
-        let res = self.conn.execute(
+    fn push_movie_genre(genre_id: i64, movie_id: i64, tx: &Transaction) {
+        let res = tx.execute(
             "INSERT INTO Movie_Genre ( movie_id, genre_id)
                 VALUES (?1, ?2)
                 ON CONFLICT(movie_id, genre_id) DO NOTHING;",
@@ -250,10 +262,6 @@ impl DataSaver {
     }
 
     // endregion
-}
-
-fn is_valid_identifier(name: &str) -> bool {
-    name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
 }
 // fn main() -> Result<()> {
 //     let mut stmt = conn.prepare("SELECT id, name, data FROM person")?;
