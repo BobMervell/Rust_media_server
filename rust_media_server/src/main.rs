@@ -29,7 +29,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     println!("{}", movie_data);
                     data_saver.create_movie_table();
                     data_saver.create_person_table();
-                    data_saver.create_movie_person_table();
                     data_saver.create_genre_table();
                     data_saver.create_movie_genre_table();
                     data_saver.push_movie(movie_data.clone());
