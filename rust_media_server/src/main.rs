@@ -26,7 +26,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     update_movie_basics(movie_data, client).await;
                     update_movie_details(movie_data, client).await;
                     update_movie_credits(movie_data, client).await;
-                    println!("{}", movie_data);
                     data_saver.create_movie_table();
                     data_saver.create_person_table();
                     data_saver.create_genre_table();
