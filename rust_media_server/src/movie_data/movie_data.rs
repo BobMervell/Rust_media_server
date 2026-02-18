@@ -62,8 +62,8 @@ impl Cast {
     pub fn name(&self) -> &str {
         &self.name
     }
-    pub fn picture_path(&self) -> &Option<String> {
-        &self.picture_path
+    pub fn picture_path(&self) -> Option<&String> {
+        self.picture_path.as_ref()
     }
     pub fn character(&self) -> &str {
         &self.character
@@ -113,8 +113,8 @@ impl Crew {
     pub fn name(&self) -> &str {
         &self.name
     }
-    pub fn picture_path(&self) -> &Option<String> {
-        &self.picture_path
+    pub fn picture_path(&self) -> Option<&String> {
+        self.picture_path.as_ref()
     }
     pub fn department(&self) -> &str {
         &self.department
@@ -277,16 +277,16 @@ impl MovieData {
         &self.summary
     }
 
-    pub fn poster_large(&self) -> &Option<String> {
-        &self.poster_large
+    pub fn poster_large(&self) -> Option<&String> {
+        self.poster_large.as_ref()
     }
 
-    pub fn poster_snapshot(&self) -> &Option<String> {
-        &self.poster_snapshot
+    pub fn poster_snapshot(&self) -> Option<&String> {
+        self.poster_snapshot.as_ref()
     }
 
-    pub fn backdrop(&self) -> &Option<String> {
-        &self.backdrop
+    pub fn backdrop(&self) -> Option<&String> {
+        self.backdrop.as_ref()
     }
 
     pub fn cast(&self) -> &[Cast] {

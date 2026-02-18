@@ -242,16 +242,29 @@ impl TMDBClient {
     // endregion
 
     // region: ----- Get images -----
-    pub async fn update_cast_images(&self, cast: &mut Cast) {
-        let picture_path = match cast.picture_path() {
+
+    async fn update_images<T, FGet, FSet>(
+        &self,
+        item: &mut T,
+        category: &str,
+        name: &str,
+        subdir: &str,
+        image_size: &str,
+        get_path: FGet,
+        set_path: FSet,
+    ) where
+        FGet: Fn(&T) -> Option<&String>,
+        FSet: Fn(&mut T, Option<String>),
+    {
+        let picture_path = match get_path(item) {
             Some(p) => p,
             None => return,
         };
 
-        let (created, dir_path) = match self.create_dir("person", cast.name(), cast.name()) {
+        let (created, dir_path) = match self.create_dir(category, subdir, name) {
             Ok(bp) => bp,
             Err(e) => {
-                println!("Error creating directory for {}: {}", cast.name(), e);
+                println!("Error creating directory for {}: {}", name, e);
                 return;
             }
         };
@@ -262,121 +275,88 @@ impl TMDBClient {
 
         let path = Path::new(&dir_path);
 
-        if let Err(e) = self.save_image("w185", picture_path, path).await {
+        if let Err(e) = self.save_image(image_size, &picture_path, path).await {
             println!("{}", e);
             return;
         }
 
-        cast.set_picture_path(Some(dir_path));
+        set_path(item, Some(dir_path));
+    }
+
+    pub async fn update_cast_images(&self, cast: &mut Cast) {
+        let cast_name = cast.name().to_owned();
+        self.update_images(
+            cast,
+            "person",
+            &cast_name,
+            &cast_name,
+            "w185",
+            |c| c.picture_path(),
+            |c, path| c.set_picture_path(path),
+        )
+        .await;
     }
 
     pub async fn update_crew_images(&self, crew: &mut Crew) {
-        let picture_path = match crew.picture_path() {
-            Some(p) => p,
-            None => return,
-        };
-
-        let (created, dir_path) = match self.create_dir("person", crew.name(), crew.name()) {
-            Ok(bp) => bp,
-            Err(e) => {
-                println!("Error creating directory for {}: {}", crew.name(), e);
-                return;
-            }
-        };
-
-        if !created {
-            return;
-        }
-
-        let path = Path::new(&dir_path);
-
-        if let Err(e) = self.save_image("w185", picture_path, path).await {
-            println!("{}", e);
-            return;
-        }
-
-        crew.set_picture_path(Some(dir_path));
-    }
-
-    pub async fn update_movie_backdrop(&self, movie: &mut MovieData) {
-        let picture_path = match movie.backdrop() {
-            Some(p) => p,
-            None => return,
-        };
-
-        let (created, dir_path) = match self.create_dir("movie", movie.title(), "backdrop") {
-            Ok(bp) => bp,
-            Err(e) => {
-                println!("Error creating directory for {}: {}", movie.title(), e);
-                return;
-            }
-        };
-
-        if !created {
-            return;
-        }
-
-        let path = Path::new(&dir_path);
-        if let Err(e) = self.save_image("w1280", picture_path, path).await {
-            println!("{}", e);
-            return;
-        }
-
-        movie.set_backdrop(Some(dir_path));
+        let crew_name = crew.name().to_owned();
+        self.update_images(
+            crew,
+            "person",
+            &crew_name,
+            &crew_name,
+            "w185",
+            |c| c.picture_path(),
+            |c, path| c.set_picture_path(path),
+        )
+        .await;
     }
 
     pub async fn update_movie_poster(&self, movie: &mut MovieData) {
-        let picture_path = match movie.poster_large() {
-            Some(p) => p,
-            None => return,
-        };
+        let movie_name = movie.title().to_owned();
+        self.update_images(
+            movie,
+            "movie",
+            "poster_large",
+            &movie_name,
+            "w780",
+            |m| m.poster_large(),
+            |m, path| {
+                m.set_poster_large(path);
+            },
+        )
+        .await;
+    }
 
-        let (created, dir_path) = match self.create_dir("movie", movie.title(), "poster_large") {
-            Ok(bp) => bp,
-            Err(e) => {
-                println!("Error creating directory for {}: {}", movie.title(), e);
-                return;
-            }
-        };
-        if !created {
-            return;
-        }
-
-        let path = Path::new(&dir_path);
-
-        if let Err(e) = self.save_image("w780", picture_path, path).await {
-            println!("{}", e);
-            return;
-        }
-
-        movie.set_poster_large(Some(dir_path));
+    pub async fn update_movie_backdrop(&self, movie: &mut MovieData) {
+        let movie_name = movie.title().to_owned();
+        self.update_images(
+            movie,
+            "movie",
+            "backdrop",
+            &movie_name,
+            "w1280",
+            |m| m.backdrop(),
+            |m, path| {
+                m.set_backdrop(path);
+            },
+        )
+        .await;
     }
 
     pub async fn update_movie_poster_snapshot(&self, movie: &mut MovieData) {
-        let picture_path = match movie.poster_snapshot() {
-            Some(p) => p,
-            None => return,
-        };
-
-        let (created, dir_path) = match self.create_dir("movie", movie.title(), "poster_snapshot") {
-            Ok(bp) => bp,
-            Err(e) => {
-                println!("Error creating directory for {}: {}", movie.title(), e);
-                return;
-            }
-        };
-        if !created {
-            return;
-        }
-
-        let path = Path::new(&dir_path);
-
-        if let Err(e) = self.save_image("w185", picture_path, path).await {
-            println!("{}", e);
-            return;
-        }
-
-        movie.set_poster_snapshot(Some(dir_path));
+        let movie_name = movie.title().to_owned();
+        self.update_images(
+            movie,
+            "movie",
+            "poster_snapshot",
+            &movie_name,
+            "w185",
+            |m| m.poster_snapshot(),
+            |m, path| {
+                m.set_poster_snapshot(path);
+            },
+        )
+        .await;
     }
 
     //returns a result tuple with true if the directory was created, and false if it already exists
@@ -430,4 +410,6 @@ impl TMDBClient {
         }
         Ok(())
     }
+
+    // endregion
 }
