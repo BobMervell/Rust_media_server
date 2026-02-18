@@ -243,106 +243,77 @@ impl TMDBClient {
 
     // region: ----- Get images -----
 
-    async fn update_images<T, FGet, FSet>(
+    async fn update_images<T, FGet>(
         &self,
-        item: &mut T,
+        item: &T,
         category: &str,
         name: &str,
         subdir: &str,
         image_size: &str,
         get_path: FGet,
-        set_path: FSet,
-    ) where
+    ) -> Option<String>
+    where
         FGet: Fn(&T) -> Option<&String>,
-        FSet: Fn(&mut T, Option<String>),
     {
         let picture_path = match get_path(item) {
             Some(p) => p,
-            None => return,
+            None => return None,
         };
 
         let (created, dir_path) = match self.create_dir(category, subdir, name) {
             Ok(bp) => bp,
             Err(e) => {
                 println!("Error creating directory for {}: {}", name, e);
-                return;
+                return None;
             }
         };
 
         if !created {
-            return;
+            return None;
         }
 
         let path = Path::new(&dir_path);
 
         if let Err(e) = self.save_image(image_size, &picture_path, path).await {
             println!("{}", e);
-            return;
+            return None;
         }
-        set_path(item, Some(dir_path));
+        return Some(dir_path);
     }
 
-    pub async fn update_cast_images(&self, cast: &mut Cast) {
+    pub async fn update_cast_images(&self, cast: &Cast) -> Option<String> {
         let cast_name = cast.name().to_owned();
-        self.update_images(
-            cast,
-            "person",
-            &cast_name,
-            &cast_name,
-            "w185",
-            |c| c.picture_path(),
-            |c, path| c.set_picture_path(path),
-        )
-        .await;
+        self.update_images(cast, "person", &cast_name, &cast_name, "w185", |c| {
+            c.picture_path()
+        })
+        .await
     }
 
-    pub async fn update_crew_images(&self, crew: &mut Crew) {
+    pub async fn update_crew_images(&self, crew: &Crew) -> Option<String> {
         let crew_name = crew.name().to_owned();
-        self.update_images(
-            crew,
-            "person",
-            &crew_name,
-            &crew_name,
-            "w185",
-            |c| c.picture_path(),
-            |c, path| c.set_picture_path(path),
-        )
-        .await;
+        self.update_images(crew, "person", &crew_name, &crew_name, "w185", |c| {
+            c.picture_path()
+        })
+        .await
     }
 
-    pub async fn update_movie_poster(&self, movie: &mut MovieData) {
+    pub async fn update_movie_poster(&self, movie: &MovieData) -> Option<String> {
         let movie_name = movie.title().to_owned();
-        self.update_images(
-            movie,
-            "movie",
-            "poster_large",
-            &movie_name,
-            "w780",
-            |m| m.poster_large(),
-            |m, path| {
-                m.set_poster_large(path);
-            },
-        )
-        .await;
+        self.update_images(movie, "movie", "poster_large", &movie_name, "w780", |m| {
+            m.poster_large()
+        })
+        .await
     }
 
-    pub async fn update_movie_backdrop(&self, movie: &mut MovieData) {
+    pub async fn update_movie_backdrop(&self, movie: &MovieData) -> Option<String> {
         let movie_name = movie.title().to_owned();
-        self.update_images(
-            movie,
-            "movie",
-            "backdrop",
-            &movie_name,
-            "w1280",
-            |m| m.backdrop(),
-            |m, path| {
-                m.set_backdrop(path);
-            },
-        )
-        .await;
+        self.update_images(movie, "movie", "backdrop", &movie_name, "w1280", |m| {
+            m.backdrop()
+        })
+        .await
     }
 
-    pub async fn update_movie_poster_snapshot(&self, movie: &mut MovieData) {
+    pub async fn update_movie_poster_snapshot(&self, movie: &MovieData) -> Option<String> {
         let movie_name = movie.title().to_owned();
         self.update_images(
             movie,
@@ -351,11 +322,8 @@ impl TMDBClient {
             &movie_name,
             "w185",
             |m| m.poster_snapshot(),
-            |m, path| {
-                m.set_poster_snapshot(path);
-            },
         )
-        .await;
+        .await
     }
 
     //returns a result tuple with true if the directory was created, and false if it already exists
