@@ -48,58 +48,58 @@ pub async fn update_movie_credits(movie_data: &mut MovieData, client: &TMDBClien
         Ok(mut movie_credits) => {
             for mut cast in movie_credits.credits_cast_mut().iter_mut() {
                 if !cast.character().contains("uncredited") {
-                    movie_data.push_cast(cast.clone());
                     client.update_cast_images(&mut cast).await;
+                    movie_data.push_cast(cast.clone());
                 }
             }
             for mut crew in movie_credits.credits_crew_mut().iter_mut() {
                 match crew.department() {
                     "Directing" => {
                         if is_important_directing(crew.job()) {
-                            movie_data.push_crew(crew.clone());
                             client.update_crew_images(&mut crew).await;
+                            movie_data.push_crew(crew.clone());
                         }
                     }
                     "Production" => {
                         if is_important_production(crew.job()) {
-                            movie_data.push_crew(crew.clone());
                             client.update_crew_images(&mut crew).await;
+                            movie_data.push_crew(crew.clone());
                         }
                     }
                     "Camera" => {
                         if is_important_camera(crew.job()) {
-                            movie_data.push_crew(crew.clone());
                             client.update_crew_images(&mut crew).await;
+                            movie_data.push_crew(crew.clone());
                         }
                     }
                     "Sound" => {
                         if is_important_sound(crew.job()) {
-                            movie_data.push_crew(crew.clone());
                             client.update_crew_images(&mut crew).await;
+                            movie_data.push_crew(crew.clone());
                         }
                     }
                     "Visual Effects" => {
                         if is_important_vfx(crew.job()) {
-                            movie_data.push_crew(crew.clone());
                             client.update_crew_images(&mut crew).await;
+                            movie_data.push_crew(crew.clone());
                         }
                     }
                     "Writing" => {
                         if is_important_writing(crew.job()) {
-                            movie_data.push_crew(crew.clone());
                             client.update_crew_images(&mut crew).await;
+                            movie_data.push_crew(crew.clone());
                         }
                     }
                     "Art" => {
                         if is_important_art(crew.job()) {
-                            movie_data.push_crew(crew.clone());
                             client.update_crew_images(&mut crew).await;
+                            movie_data.push_crew(crew.clone());
                         }
                     }
                     "Costume & Make-Up" => {
                         if is_important_costumes_makeup(crew.job()) {
-                            movie_data.push_crew(crew.clone());
                             client.update_crew_images(&mut crew).await;
+                            movie_data.push_crew(crew.clone());
                         }
                     }
                     _ => {}

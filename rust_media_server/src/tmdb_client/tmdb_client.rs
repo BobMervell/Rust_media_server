@@ -279,7 +279,6 @@ impl TMDBClient {
             println!("{}", e);
             return;
         }
-
         set_path(item, Some(dir_path));
     }
 
