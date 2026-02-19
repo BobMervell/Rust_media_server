@@ -1,5 +1,6 @@
 use crate::movie_data::movie_data::MovieData;
-use crate::tmdb_client::tmdb_client::TMDBClient;
+use crate::tmdb_client::tmdb_client::{CreditsMovie, TMDBClient};
+use futures::stream::{self, StreamExt};
 
 pub async fn update_movie_basics(movie_data: &mut MovieData, client: &TMDBClient) {
     let movie_basics = client
@@ -16,7 +17,14 @@ pub async fn update_movie_basics(movie_data: &mut MovieData, client: &TMDBClient
                 .set_title(movie_basics.title())
                 .set_vote_average(movie_basics.vote_average())
                 .set_release_date(movie_basics.release_date())
-                .set_summary(movie_basics.overview());
+                .set_summary(movie_basics.overview())
+                .set_poster_large(movie_basics.poster_path().to_owned())
+                .set_poster_snapshot(movie_basics.poster_path().to_owned())
+                .set_backdrop(movie_basics.backdrop_path().to_owned());
+
+            client.update_movie_backdrop(movie_data).await;
+            client.update_movie_poster(movie_data).await;
+            client.update_movie_poster_snapshot(movie_data).await;
         }
         None => {}
     }
@@ -29,7 +37,7 @@ pub async fn update_movie_details(movie_data: &mut MovieData, client: &TMDBClien
             movie_data.set_genres(movie_details.genres());
         }
         Err(e) => {
-            println!("test {}", e)
+            println!("movie details error: {}", e)
         }
     }
 }
@@ -38,55 +46,21 @@ pub async fn update_movie_credits(movie_data: &mut MovieData, client: &TMDBClien
     let movie_credits = client.fetch_movie_credits(movie_data.tmdb_id()).await;
 
     match movie_credits {
-        Ok(movie_credits) => {
-            for cast in movie_credits.credits_cast().iter() {
-                if !cast.character().contains("uncredited") {
-                    movie_data.push_cast(cast.clone());
+        Ok(mut movie_credits) => {
+            let results = update_cast_images(&movie_credits, client).await;
+            for (index, maybe_path) in results {
+                if let Some(path) = maybe_path {
+                    let cast_mut = &mut movie_credits.credits_cast_mut()[index];
+                    cast_mut.set_picture_path(Some(path));
+                    movie_data.push_cast(cast_mut.clone());
                 }
             }
-            for crew in movie_credits.credits_crew().iter() {
-                match crew.department() {
-                    "Directing" => {
-                        if is_important_directing(crew.job()) {
-                            movie_data.push_crew(crew.clone());
-                        }
-                    }
-                    "Production" => {
-                        if is_important_production(crew.job()) {
-                            movie_data.push_crew(crew.clone());
-                        }
-                    }
-                    "Camera" => {
-                        if is_important_camera(crew.job()) {
-                            movie_data.push_crew(crew.clone());
-                        }
-                    }
-                    "Sound" => {
-                        if is_important_sound(crew.job()) {
-                            movie_data.push_crew(crew.clone());
-                        }
-                    }
-                    "Visual Effects" => {
-                        if is_important_vfx(crew.job()) {
-                            movie_data.push_crew(crew.clone());
-                        }
-                    }
-                    "Writing" => {
-                        if is_important_writing(crew.job()) {
-                            movie_data.push_crew(crew.clone());
-                        }
-                    }
-                    "Art" => {
-                        if is_important_art(crew.job()) {
-                            movie_data.push_crew(crew.clone());
-                        }
-                    }
-                    "Costume & Make-Up" => {
-                        if is_important_costumes_makeup(crew.job()) {
-                            movie_data.push_crew(crew.clone());
-                        }
-                    }
-                    _ => {}
+            let results = update_crew_images(&movie_credits, client).await;
+            for (index, maybe_path) in results {
+                if let Some(path) = maybe_path {
+                    let crew_mut = &mut movie_credits.credits_crew_mut()[index];
+                    crew_mut.set_picture_path(Some(path));
+                    movie_data.push_crew(crew_mut.clone());
                 }
             }
         }
@@ -94,6 +68,76 @@ pub async fn update_movie_credits(movie_data: &mut MovieData, client: &TMDBClien
             println!("Credits error: {}", e)
         }
     }
+}
+
+async fn update_cast_images(
+    movie_credits: &CreditsMovie,
+    client: &TMDBClient,
+) -> Vec<(usize, Option<String>)> {
+    let cast_indx: Vec<usize> = movie_credits
+        .credits_cast()
+        .iter()
+        .enumerate()
+        .filter(|(_, cast)| !cast.character().contains("uncredited"))
+        .map(|(i, _)| i)
+        .collect();
+
+    let batch_size = 20;
+
+    let results: Vec<(usize, Option<String>)> = stream::iter(cast_indx)
+        .map(|index| {
+            let cast = &movie_credits.credits_cast()[index];
+
+            async move {
+                let new_path = client.update_cast_images(cast).await;
+                (index, new_path)
+            }
+        })
+        .buffer_unordered(batch_size)
+        .collect::<Vec<_>>()
+        .await;
+
+    return results;
+}
+
+async fn update_crew_images(
+    movie_credits: &CreditsMovie,
+    client: &TMDBClient,
+) -> Vec<(usize, Option<String>)> {
+    let crew_indx: Vec<usize> = movie_credits
+        .credits_crew()
+        .iter()
+        .enumerate()
+        .filter(|(_, crew)| match crew.department() {
+            "Directing" => is_important_directing(crew.job()),
+            "Production" => is_important_production(crew.job()),
+            "Camera" => is_important_camera(crew.job()),
+            "Sound" => is_important_sound(crew.job()),
+            "Visual Effects" => is_important_vfx(crew.job()),
+            "Writing" => is_important_writing(crew.job()),
+            "Art" => is_important_art(crew.job()),
+            "Costume & Make-Up" => is_important_costumes_makeup(crew.job()),
+            _ => false,
+        })
+        .map(|(i, _)| i)
+        .collect();
+
+    let batch_size = 20;
+
+    let results: Vec<(usize, Option<String>)> = stream::iter(crew_indx)
+        .map(|index| {
+            let crew = &movie_credits.credits_crew()[index];
+
+            async move {
+                let new_path = client.update_crew_images(crew).await;
+                (index, new_path)
+            }
+        })
+        .buffer_unordered(batch_size)
+        .collect::<Vec<_>>()
+        .await;
+
+    return results;
 }
 
 // region: Main Roles only

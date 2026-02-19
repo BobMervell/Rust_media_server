@@ -263,18 +263,3 @@ impl DataSaver {
 
     // endregion
 }
-// fn main() -> Result<()> {
-//     let mut stmt = conn.prepare("SELECT id, name, data FROM person")?;
-//     let person_iter = stmt.query_map([], |row| {
-//         Ok(Person {
-//             id: row.get(0)?,
-//             name: row.get(1)?,
-//             data: row.get(2)?,
-//         })
-//     })?;
-
-//     for person in person_iter {
-//         println!("Found person {:?}", person?);
-//     }
-//     Ok(())
-// }
