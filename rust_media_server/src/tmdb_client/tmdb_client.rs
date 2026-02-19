@@ -1,10 +1,16 @@
-use crate::movie_data::movie_data::{Cast, Crew, Genre};
+use crate::movie_data::movie_data::{Cast, Crew, Genre, MovieData};
 use reqwest::{
     Client,
     header::{ACCEPT, AUTHORIZATION, HeaderMap, HeaderValue},
 };
 use serde::{Deserialize, Serialize};
-use std::{error::Error, io};
+use std::{
+    error::Error,
+    fs::{self},
+    io::{self},
+    path::Path,
+};
+use tokio::io::AsyncWriteExt;
 
 const TMDB_BASE_URL: &str = "https://api.themoviedb.org/3";
 
@@ -28,6 +34,8 @@ pub struct SearchedMovie {
     vote_average: f32,
     release_date: String,
     overview: String,
+    backdrop_path: Option<String>,
+    poster_path: Option<String>,
 }
 impl SearchedMovie {
     pub fn id(&self) -> i64 {
@@ -60,6 +68,12 @@ impl SearchedMovie {
 
     pub fn overview(&self) -> &str {
         &self.overview
+    }
+    pub fn backdrop_path(&self) -> &Option<String> {
+        &self.backdrop_path
+    }
+    pub fn poster_path(&self) -> &Option<String> {
+        &self.poster_path
     }
 }
 
@@ -105,6 +119,13 @@ impl CreditsMovie {
     pub fn credits_crew(&self) -> &Vec<Crew> {
         &self.crew
     }
+
+    pub fn credits_cast_mut(&mut self) -> &mut Vec<Cast> {
+        &mut self.cast
+    }
+    pub fn credits_crew_mut(&mut self) -> &mut Vec<Crew> {
+        &mut self.crew
+    }
 }
 // endregion
 
@@ -131,6 +152,7 @@ impl TMDBClient {
         Ok(Self { client: client })
     }
 
+    // region: ----- Get movies info -----
     pub async fn get_movie_info(
         &self,
         movie_name: &str,
@@ -151,7 +173,7 @@ impl TMDBClient {
             }
 
             Err(e) => {
-                println!("error: {}", e);
+                println!("error fetching movie: {}", e);
                 return None;
             }
         }
@@ -214,8 +236,147 @@ impl TMDBClient {
             .send()
             .await?;
 
-        println!("{:?}", response);
         let body_json = response.json::<CreditsMovie>().await?;
         Ok(body_json)
     }
+    // endregion
+
+    // region: ----- Get images -----
+
+    async fn update_images<T, FGet>(
+        &self,
+        item: &T,
+        category: &str,
+        name: &str,
+        subdir: &str,
+        image_size: &str,
+        get_path: FGet,
+    ) -> Option<String>
+    where
+        FGet: Fn(&T) -> Option<&String>,
+    {
+        let picture_path = match get_path(item) {
+            Some(p) => p,
+            None => return None,
+        };
+
+        let (created, dir_path) = match self.create_dir(category, subdir, name) {
+            Ok(bp) => bp,
+            Err(e) => {
+                println!("Error creating directory for {}: {}", name, e);
+                return None;
+            }
+        };
+
+        if !created {
+            return None;
+        }
+
+        let path = Path::new(&dir_path);
+
+        if let Err(e) = self.save_image(image_size, &picture_path, path).await {
+            println!("{}", e);
+            return None;
+        }
+        return Some(dir_path);
+    }
+
+    pub async fn update_cast_images(&self, cast: &Cast) -> Option<String> {
+        let cast_name = cast.name().to_owned();
+        self.update_images(cast, "person", &cast_name, &cast_name, "w185", |c| {
+            c.picture_path()
+        })
+        .await
+    }
+
+    pub async fn update_crew_images(&self, crew: &Crew) -> Option<String> {
+        let crew_name = crew.name().to_owned();
+        self.update_images(crew, "person", &crew_name, &crew_name, "w185", |c| {
+            c.picture_path()
+        })
+        .await
+    }
+
+    pub async fn update_movie_poster(&self, movie: &MovieData) -> Option<String> {
+        let movie_name = movie.title().to_owned();
+        self.update_images(movie, "movie", "poster_large", &movie_name, "w780", |m| {
+            m.poster_large()
+        })
+        .await
+    }
+
+    pub async fn update_movie_backdrop(&self, movie: &MovieData) -> Option<String> {
+        let movie_name = movie.title().to_owned();
+        self.update_images(movie, "movie", "backdrop", &movie_name, "w1280", |m| {
+            m.backdrop()
+        })
+        .await
+    }
+
+    pub async fn update_movie_poster_snapshot(&self, movie: &MovieData) -> Option<String> {
+        let movie_name = movie.title().to_owned();
+        self.update_images(
+            movie,
+            "movie",
+            "poster_snapshot",
+            &movie_name,
+            "w185",
+            |m| m.poster_snapshot(),
+        )
+        .await
+    }
+
+    //returns a result tuple with true if the directory was created, and false if it already exists
+    fn create_dir(
+        &self,
+        parent_folder_name: &str,
+        folder_name: &str,
+        file_name: &str,
+    ) -> Result<(bool, String), std::io::Error> {
+        let mut save_dir = std::env::current_dir()?;
+        save_dir.push("images");
+        save_dir.push(parent_folder_name);
+        save_dir.push(folder_name);
+        let full_path = save_dir.join(file_name);
+
+        if full_path.exists() {
+            Ok((false, full_path.to_string_lossy().to_string()))
+        } else {
+            fs::create_dir_all(&save_dir)?;
+            Ok((true, full_path.to_string_lossy().to_string()))
+        }
+    }
+
+    async fn save_image(
+        &self,
+        format: &str,
+        picture_path: &str,
+        full_path: &Path,
+    ) -> Result<(), Box<dyn Error>> {
+        let url = format!("https://image.tmdb.org/t/p/{}/{}", format, picture_path);
+
+        let mut response = self.client.get(url).send().await?;
+
+        if !response.status().is_success() {
+            println!("HTTP error: {}", response.status());
+            return Ok(());
+        }
+
+        if let Some(content_type) = response.headers().get(reqwest::header::CONTENT_TYPE) {
+            if let Ok(content_type_str) = content_type.to_str() {
+                if !content_type_str.starts_with("image/") {
+                    println!("Response is not an image");
+                    return Ok(());
+                }
+            }
+
+            let mut file = tokio::fs::File::create(full_path).await?;
+            while let Some(chunk) = response.chunk().await? {
+                file.write_all(&chunk).await?;
+            }
+        }
+        Ok(())
+    }
+
+    // endregion
 }

@@ -62,14 +62,17 @@ impl Cast {
     pub fn name(&self) -> &str {
         &self.name
     }
-    pub fn picture_path(&self) -> &Option<String> {
-        &self.picture_path
+    pub fn picture_path(&self) -> Option<&String> {
+        self.picture_path.as_ref()
     }
     pub fn character(&self) -> &str {
         &self.character
     }
     pub fn order(&self) -> i32 {
         self.order
+    }
+    pub fn set_picture_path(&mut self, new_path: Option<String>) {
+        self.picture_path = new_path
     }
 }
 
@@ -110,14 +113,17 @@ impl Crew {
     pub fn name(&self) -> &str {
         &self.name
     }
-    pub fn picture_path(&self) -> &Option<String> {
-        &self.picture_path
+    pub fn picture_path(&self) -> Option<&String> {
+        self.picture_path.as_ref()
     }
     pub fn department(&self) -> &str {
         &self.department
     }
     pub fn job(&self) -> &str {
         &self.job
+    }
+    pub fn set_picture_path(&mut self, new_path: Option<String>) {
+        self.picture_path = new_path
     }
 }
 
@@ -135,9 +141,9 @@ pub struct MovieData {
     vote_average: f32,
     release_date: String,
     summary: String,
-    poster_large: String,
-    poster_snapshot: String,
-    backdrop: String,
+    poster_large: Option<String>,
+    poster_snapshot: Option<String>,
+    backdrop: Option<String>,
     cast: Vec<Cast>,
     crew: Vec<Crew>,
 }
@@ -158,9 +164,9 @@ impl fmt::Display for MovieData {
              Vote average:        {:.1}\n\
              Release date:        {}\n\
              Summary:             {}\n\
-             Poster large:        {}\n\
-             Poster snapshot:     {}\n\
-             Backdrop:            {}\n\
+             Poster large:        {:?}\n\
+             Poster snapshot:     {:?}\n\
+             Backdrop:            {:?}\n\
              Cast;                {:?}\n\
              Crew:                {:?}",
             self.id,
@@ -213,9 +219,9 @@ impl MovieData {
             vote_average: 0.0,
             release_date: "".to_owned(),
             summary: "".to_owned(),
-            poster_large: "".to_owned(),
-            poster_snapshot: "".to_owned(),
-            backdrop: "".to_owned(),
+            poster_large: None,
+            poster_snapshot: None,
+            backdrop: None,
             cast: vec![],
             crew: vec![],
         }
@@ -271,16 +277,16 @@ impl MovieData {
         &self.summary
     }
 
-    pub fn poster_large(&self) -> &str {
-        &self.poster_large
+    pub fn poster_large(&self) -> Option<&String> {
+        self.poster_large.as_ref()
     }
 
-    pub fn poster_snapshot(&self) -> &str {
-        &self.poster_snapshot
+    pub fn poster_snapshot(&self) -> Option<&String> {
+        self.poster_snapshot.as_ref()
     }
 
-    pub fn backdrop(&self) -> &str {
-        &self.backdrop
+    pub fn backdrop(&self) -> Option<&String> {
+        self.backdrop.as_ref()
     }
 
     pub fn cast(&self) -> &[Cast] {
@@ -355,18 +361,18 @@ impl MovieData {
         self
     }
 
-    pub fn set_poster_large(&mut self, new_poster_large: &str) -> &mut Self {
-        self.poster_large = new_poster_large.to_owned();
+    pub fn set_poster_large(&mut self, new_poster_large: Option<String>) -> &mut Self {
+        self.poster_large = new_poster_large;
         self
     }
 
-    pub fn set_poster_snapshot(&mut self, new_poster_snapshot: &str) -> &mut Self {
-        self.poster_snapshot = new_poster_snapshot.to_owned();
+    pub fn set_poster_snapshot(&mut self, new_poster_snapshot: Option<String>) -> &mut Self {
+        self.poster_snapshot = new_poster_snapshot;
         self
     }
 
-    pub fn set_backdrop(&mut self, new_backdrop: &str) -> &mut Self {
-        self.backdrop = new_backdrop.to_owned();
+    pub fn set_backdrop(&mut self, new_backdrop: Option<String>) -> &mut Self {
+        self.backdrop = new_backdrop;
         self
     }
 
