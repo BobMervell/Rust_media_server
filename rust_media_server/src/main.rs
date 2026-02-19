@@ -10,26 +10,28 @@ use std::io;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // let smb_explorer: SmbExplorer = smb_connect().await?;
-    // let mut movies: Vec<MovieData> = smb_explorer.fetch_movies().await;
+    let smb_explorer: SmbExplorer = smb_connect().await?;
+    let mut movies: Vec<MovieData> = smb_explorer.fetch_movies().await;
 
     let client = TMDBClient::new();
-    let movie_test = MovieData::new("la la land (2016)/la la land (2016).mp4".to_string());
-    let mut movies: Vec<MovieData> = Vec::new();
-    movies.push(movie_test);
+    // let movie_test = MovieData::new("la la land (2016)/la la land (2016).mp4".to_string());
+    // let mut movies: Vec<MovieData> = Vec::new();
+    // movies.push(movie_test);
 
     let data_saver = DataSaver::new("movie_db.db".to_string());
+
     match client {
         Ok(ref client) => match data_saver {
             Ok(mut data_saver) => {
+                data_saver.create_movie_table();
+                data_saver.create_person_table();
+                data_saver.create_genre_table();
+                data_saver.create_movie_genre_table();
                 for movie_data in movies.iter_mut() {
                     update_movie_basics(movie_data, client).await;
                     update_movie_details(movie_data, client).await;
                     update_movie_credits(movie_data, client).await;
-                    data_saver.create_movie_table();
-                    data_saver.create_person_table();
-                    data_saver.create_genre_table();
-                    data_saver.create_movie_genre_table();
+
                     data_saver.push_movie(movie_data.clone());
                 }
             }
