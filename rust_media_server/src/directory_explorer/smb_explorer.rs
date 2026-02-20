@@ -1,133 +1,131 @@
 use crate::movie_data::movie_data::MovieData;
-use futures::{FutureExt, future::BoxFuture};
+use anyhow::{Context, Result};
 use smb::{
-    Client, ClientConfig, Directory, FileAccessMask, FileDirectoryInformation, Resource, UncPath,
-    resource::iter_stream::QueryDirectoryStream,
-};
-use std::{
-    error::Error,
-    str::FromStr,
-    sync::{Arc, Mutex},
-};
+    Client, ClientConfig, Directory, FileAccessMask, FileDirectoryInformation, Resource, UncPath};
+use std::{io, str::FromStr, sync::Arc};
 use trpl::StreamExt;
+
+pub async fn tempo_smb_connect() -> Result<SmbExplorer> {
+    let mut path = String::new();
+    println!("Enter the samba remote path");
+    io::stdin()
+        .read_line(&mut path)
+        .context("Failed to read remote path")?;
+    let path = path.trim_end();
+
+    let mut username = String::new();
+    println!("Enter the username");
+    io::stdin()
+        .read_line(&mut username)
+        .context("Failed to read username")?;
+    let username = username.trim_end();
+
+    let mut password = String::new();
+    println!("Enter the passord");
+    io::stdin()
+        .read_line(&mut password)
+        .context("Failed to read password")?;
+    let password = password.trim_end();
+
+    SmbExplorer::new(path.to_owned(), username.to_owned(), password.to_owned()).await
+}
 
 pub struct SmbExplorer {
     tree: Arc<smb::Tree>,
 }
 
 impl SmbExplorer {
-    pub async fn new(
-        path: String,
-        username: String,
-        password: String,
-    ) -> Result<Self, Box<dyn std::error::Error>> {
+    pub async fn new(path: String, username: String, password: String) -> Result<Self> {
         let client = Client::new(ClientConfig::default());
         let uncpath: UncPath = UncPath::from_str(&path).unwrap();
-        client.share_connect(&uncpath, &username, password).await?;
+        client
+            .share_connect(&uncpath, &username, password)
+            .await
+            .context("Failed to connect to remote")?;
 
-        let tree = client.get_tree(&uncpath).await?;
+        let tree = client
+            .get_tree(&uncpath)
+            .await
+            .context("Failed to read retrieve remote directory tree")?;
         Ok(Self { tree: tree })
     }
 
-    pub async fn fetch_movies(&self) -> Vec<MovieData> {
-        let movies: Arc<Mutex<Vec<MovieData>>> = Arc::new(Mutex::new(Vec::new()));
-
-        println!("starting");
+    pub async fn fetch_movies(&self) -> Result<Vec<MovieData>> {
         let root_path = "";
-        self.explore_path(root_path.to_owned(), Arc::clone(&movies))
-            .await
-            .unwrap();
+        let movies = self.explore_path(root_path).await;
 
-        return movies.lock().unwrap().clone();
+        return movies;
     }
 
-    fn explore_path<'a>(
-        &'a self,
-        root_path: String,
-        movies: Arc<Mutex<Vec<MovieData>>>,
-    ) -> BoxFuture<'a, Result<(), Box<dyn Error>>> {
-        async move {
-            let access_mask = FileAccessMask::new().with_generic_read(true);
-            let resource: Result<Resource, smb::Error> =
-                self.tree.open_existing(&root_path, access_mask).await;
+    async fn explore_path(&self, path: &str) -> Result<Vec<MovieData>> {
+        let mut movies = Vec::new();
+        let entries = self
+            .read_directory(path)
+            .await
+            .context("Failed to iterate over data stream")?;
 
-            if let Some(dir) = self.is_directory(resource) {
-                let dir: Arc<Directory> = Arc::from(dir);
-
-                let data_stream =
-                    smb::Directory::query::<FileDirectoryInformation>(&dir, "*").await;
-
-                match data_stream {
-                    Ok(data) => self.handle_stream(data, root_path, movies).await?,
-                    Err(e) => {
-                        println!("err: {}", e);
-                        return Ok(());
-                    }
+        for entry in entries {
+            if entry.file_attributes.directory() {
+                let (is_valid, sub_path) = self.parse_sub_path(&entry, path);
+                if is_valid {
+                    let more_movies = Box::pin(self.explore_path(&sub_path))
+                        .await
+                        .with_context(|| format!("Failed to explore path: {}", sub_path))?;
+                    movies.extend(more_movies);
                 }
             } else {
-            }
-            Ok(())
-        }
-        .boxed()
-    }
-
-    fn is_directory(&self, resource: Result<Resource, smb::Error>) -> Option<Directory> {
-        match resource {
-            Ok(res) => {
-                if let Resource::Directory(dir) = res {
-                    Some(dir)
-                } else {
-                    None
+                let file_path = self.parse_file_path(&entry, path);
+                if self.is_video_file(&entry.file_name.to_string()) && self.is_not_featurette(&path)
+                {
+                    let movie = MovieData::new(file_path);
+                    movies.push(movie);
                 }
             }
-            Err(e) => {
-                println!("Error accessing resource: {}", e);
-                None
-            }
         }
+        return Ok(movies);
     }
 
-    async fn handle_stream<'a>(
-        &self,
-        mut data_stream: QueryDirectoryStream<'a, FileDirectoryInformation>,
-        path: String,
-        movies: Arc<Mutex<Vec<MovieData>>>,
-    ) -> Result<(), Box<dyn Error>> {
-        while let Some(entry) = data_stream.next().await {
-            match entry {
-                Ok(file_info) => {
-                    if file_info.file_attributes.directory() {
-                        //Parse directory path
-                        if file_info.file_name == "." || file_info.file_name == ".." {
-                            continue;
-                        }
+    async fn read_directory(&self, path: &str) -> Result<Vec<FileDirectoryInformation>> {
+        let mut entries = Vec::new();
+        let access_mask = FileAccessMask::new().with_generic_read(true);
 
-                        let sub_path = if path.is_empty() {
-                            file_info.file_name.to_string()
-                        } else {
-                            format!("{}/{}", path, file_info.file_name)
-                        };
-                        self.explore_path(sub_path, Arc::clone(&movies)).await?;
-                    } else {
-                        //parse file path
-                        let movie_path = if path.is_empty() {
-                            file_info.file_name.to_string()
-                        } else {
-                            format!("{}/{}", path, file_info.file_name)
-                        };
-                        if self.is_video_file(&file_info.file_name.to_string())
-                            && self.is_not_featurette(&path)
-                        {
-                            let movie = MovieData::new(movie_path);
-                            println!("{}", movie.file_title());
-                            movies.lock().unwrap().push(movie);
-                        }
-                    }
-                }
-                Err(e) => eprintln!("Error retrieving entry: {:?}", e),
+        let resource = self
+            .tree
+            .open_existing(&path, access_mask)
+            .await
+            .with_context(|| format!("Could not open directory: {}", path))?;
+
+        if let Resource::Directory(dir) = resource {
+            let dir: Arc<Directory> = Arc::from(dir);
+            let mut data_stream = smb::Directory::query::<FileDirectoryInformation>(&dir, "*")
+                .await
+                .with_context(|| format!("Failed to get files info in: {}", path))?;
+            while let Some(entry) = data_stream.try_next().await? {
+                entries.push(entry);
             }
         }
-        Ok(())
+        Ok(entries)
+    }
+
+    fn parse_sub_path(&self, dir_entry: &FileDirectoryInformation, path: &str) -> (bool, String) {
+        if dir_entry.file_name == "." || dir_entry.file_name == ".." {
+            return (false, "".to_string());
+        }
+
+        let sub_path = if path.is_empty() {
+            dir_entry.file_name.to_string()
+        } else {
+            format!("{}/{}", path, dir_entry.file_name)
+        };
+        return (true, sub_path);
+    }
+
+    fn parse_file_path(&self, file_entry: &FileDirectoryInformation, path: &str) -> String {
+        if path.is_empty() {
+            return file_entry.file_name.to_string();
+        } else {
+            return format!("{}/{}", path, file_entry.file_name);
+        };
     }
 
     fn is_video_file(&self, file_name: &str) -> bool {
