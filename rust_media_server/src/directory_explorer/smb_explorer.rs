@@ -39,7 +39,9 @@ pub struct SmbExplorer {
 impl SmbExplorer {
     pub async fn new(path: String, username: String, password: String) -> Result<Self> {
         let client = Client::new(ClientConfig::default());
-        let uncpath: UncPath = UncPath::from_str(&path).unwrap();
+        let uncpath: UncPath = UncPath::from_str(&path)
+            .with_context(|| format!("Failed to unwrap path from string: {}", &path))?;
+
         client
             .share_connect(&uncpath, &username, password)
             .await
