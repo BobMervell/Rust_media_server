@@ -6,6 +6,7 @@ use smb::{
 use std::{io, str::FromStr, sync::Arc};
 use trpl::StreamExt;
 
+//TODO replace tempo_smb_connect()
 pub async fn tempo_smb_connect() -> Result<SmbExplorer> {
     let mut path = String::new();
     println!("Enter the samba remote path");

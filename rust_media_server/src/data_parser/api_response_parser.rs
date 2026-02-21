@@ -10,7 +10,7 @@ pub async fn update_movie_basics(movie_data: &mut MovieData, client: &TMDBClient
         )
         .await;
     match movie_basics {
-        Some(movie_basics) => {
+        Ok(movie_basics) => {
             movie_data
                 .set_tmdb_id(movie_basics.id())
                 .set_original_title(movie_basics.original_title())
@@ -26,7 +26,7 @@ pub async fn update_movie_basics(movie_data: &mut MovieData, client: &TMDBClient
             client.update_movie_poster(movie_data).await;
             client.update_movie_poster_snapshot(movie_data).await;
         }
-        None => {}
+        Err(e) => {}
     }
 }
 

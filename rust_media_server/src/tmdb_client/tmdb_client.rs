@@ -1,12 +1,11 @@
 use crate::movie_data::movie_data::{Cast, Crew, Genre, MovieData};
-use anyhow::Result;
+use anyhow::{Context, Result, anyhow};
 use reqwest::{
-    Client,
+    Client, Response,
     header::{ACCEPT, AUTHORIZATION, HeaderMap, HeaderValue},
 };
 use serde::{Deserialize, Serialize};
 use std::{
-    error::Error,
     fs::{self},
     io::{self},
     path::Path,
@@ -137,6 +136,7 @@ pub struct TMDBClient {
 impl TMDBClient {
     pub fn new() -> Result<Self> {
         let mut token = String::new();
+        // TODO move tmdb token acquisition out of tmdb new
         println!("Enter the tmdb token ");
         match io::stdin().read_line(&mut token) {
             Err(e) => eprintln!("Erreur: {}", e),
@@ -146,9 +146,16 @@ impl TMDBClient {
 
         let mut headers = HeaderMap::new();
         headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
-        headers.insert(AUTHORIZATION, HeaderValue::from_str(token)?);
+        //TODO WARNING HeaderValue::from_str is intended to be replaced in the future by a TryFrom.
+        headers.insert(
+            AUTHORIZATION,
+            HeaderValue::from_str(token).context("Failed to create header value with token")?,
+        );
 
-        let client = Client::builder().default_headers(headers).build()?;
+        let client = Client::builder()
+            .default_headers(headers)
+            .build()
+            .context("Failed to build client")?;
 
         Ok(Self { client: client })
     }
@@ -158,25 +165,25 @@ impl TMDBClient {
         &self,
         movie_name: &str,
         movie_year: Option<u32>,
-    ) -> Option<SearchedMovie> {
+    ) -> Result<SearchedMovie> {
         let movie_result = self.fetch_movie_by_name(movie_name, movie_year).await;
 
         match movie_result {
             Ok(fetch_result) if !fetch_result.results.is_empty() => {
-                Some(self.get_most_popular(fetch_result))
+                Ok(self.get_most_popular(fetch_result))
             }
-            Ok(_) => {
-                println!(
-                    "NO RESULT FOUND FOR MOVIE: {}, {:#?}",
-                    movie_name, movie_year
-                );
-                None
-            }
+            Ok(_) => Err(anyhow!(
+                "NO RESULT FOUND FOR MOVIE: {}, {:#?}",
+                movie_name,
+                movie_year
+            )),
 
-            Err(e) => {
-                println!("error fetching movie: {}", e);
-                return None;
-            }
+            Err(e) => Err(anyhow!(
+                "Error fetching movie: {} {:?} \n Caused by: {:?}",
+                movie_name,
+                movie_year,
+                e
+            )),
         }
     }
 
@@ -184,7 +191,7 @@ impl TMDBClient {
         &self,
         movie_name: &str,
         movie_year: Option<u32>,
-    ) -> Result<MovieSearchResult, reqwest::Error> {
+    ) -> Result<MovieSearchResult> {
         let params = SearchParams {
             query: movie_name,
             language: "en-US",
@@ -192,14 +199,30 @@ impl TMDBClient {
             primary_release_year: movie_year,
         };
 
+        let url = format!("{}/search/movie", TMDB_BASE_URL);
+
         let response = self
             .client
-            .get(format!("{}/search/movie", TMDB_BASE_URL))
+            .get(&url)
             .query(&params)
             .send()
-            .await?;
-        let body_json = response.json::<MovieSearchResult>().await?;
-        Ok(body_json)
+            .await
+            .with_context(|| {
+                format!(
+                    "Failed to get search response for movie: {} ({:?}), from url: {}",
+                    movie_name, movie_year, &url
+                )
+            })?;
+        let movie = response
+            .json::<MovieSearchResult>()
+            .await
+            .with_context(|| {
+                format!(
+                    "Failed to deserialize search response for movie: {} ({:?}), from url: {}",
+                    movie_name, movie_year, &url
+                )
+            })?;
+        Ok(movie)
     }
 
     fn get_most_popular(&self, fetch_result: MovieSearchResult) -> SearchedMovie {
@@ -214,36 +237,50 @@ impl TMDBClient {
         return result_movie;
     }
 
-    pub async fn fetch_movie_details(&self, tmdb_id: i64) -> Result<DetailsMovie, reqwest::Error> {
-        let response = self
-            .client
-            .get(format!(
-                "{}/movie/{}?language=en-US",
-                TMDB_BASE_URL, &tmdb_id
-            ))
-            .send()
-            .await?;
-        let body_json = response.json::<DetailsMovie>().await?;
-        Ok(body_json)
+    pub async fn fetch_movie_details(&self, tmdb_id: i64) -> Result<DetailsMovie> {
+        let url = format!("{}/movie/{}?language=en-US", TMDB_BASE_URL, &tmdb_id);
+
+        let response = self.client.get(&url).send().await.with_context(|| {
+            format!(
+                "Failed to get detail response for movie id: {} , from url: {}",
+                tmdb_id, &url
+            )
+        })?;
+        let movie_details = response.json::<DetailsMovie>().await.with_context(|| {
+            format!(
+                "Failed to deserialize detail response for movie id: {}, from url: {}",
+                tmdb_id, &url
+            )
+        })?;
+        Ok(movie_details)
     }
 
-    pub async fn fetch_movie_credits(&self, tmdb_id: i64) -> Result<CreditsMovie, reqwest::Error> {
-        let response = self
-            .client
-            .get(format!(
-                "{}/movie/{}/credits?language=en-US",
-                TMDB_BASE_URL, &tmdb_id
-            ))
-            .send()
-            .await?;
+    pub async fn fetch_movie_credits(&self, tmdb_id: i64) -> Result<CreditsMovie> {
+        let url = format!(
+            "{}/movie/{}/credits?language=en-US",
+            TMDB_BASE_URL, &tmdb_id
+        );
 
-        let body_json = response.json::<CreditsMovie>().await?;
-        Ok(body_json)
+        let response = self.client.get(&url).send().await.with_context(|| {
+            format!(
+                "Failed to get credit response for movie id: {} , from url: {}",
+                tmdb_id, &url
+            )
+        })?;
+
+        let credits_details = response.json::<CreditsMovie>().await.with_context(|| {
+            format!(
+                "Failed to deserialize credit response for movie id: {}, from url: {}",
+                tmdb_id, &url
+            )
+        })?;
+        Ok(credits_details)
     }
     // endregion
 
     // region: ----- Get images -----
 
+    //TODO change update_images to work with results rather than option
     async fn update_images<T, FGet>(
         &self,
         item: &T,
@@ -264,7 +301,7 @@ impl TMDBClient {
         let (created, dir_path) = match self.create_dir(category, subdir, name) {
             Ok(bp) => bp,
             Err(e) => {
-                println!("Error creating directory for {}: {}", name, e);
+                tracing::error!("Error creating directory for: {} \n Caused by: {}", name, e);
                 return None;
             }
         };
@@ -276,7 +313,7 @@ impl TMDBClient {
         let path = Path::new(&dir_path);
 
         if let Err(e) = self.save_image(image_size, &picture_path, path).await {
-            println!("{}", e);
+            tracing::error!("Failed to save image for: {} \n Caused by: {}", name, e);
             return None;
         }
         return Some(dir_path);
@@ -333,8 +370,9 @@ impl TMDBClient {
         parent_folder_name: &str,
         folder_name: &str,
         file_name: &str,
-    ) -> Result<(bool, String), std::io::Error> {
-        let mut save_dir = std::env::current_dir()?;
+    ) -> Result<(bool, String)> {
+        let mut save_dir =
+            std::env::current_dir().context("Failed to retrieve current working directory")?;
         save_dir.push("images");
         save_dir.push(parent_folder_name);
         save_dir.push(folder_name);
@@ -343,41 +381,57 @@ impl TMDBClient {
         if full_path.exists() {
             Ok((false, full_path.to_string_lossy().to_string()))
         } else {
-            fs::create_dir_all(&save_dir)?;
+            fs::create_dir_all(&save_dir).with_context(|| {
+                format!("Failed to create directories for path {:?}", &save_dir)
+            })?;
             Ok((true, full_path.to_string_lossy().to_string()))
         }
     }
 
-    async fn save_image(
-        &self,
-        format: &str,
-        picture_path: &str,
-        full_path: &Path,
-    ) -> Result<(), Box<dyn Error>> {
+    async fn save_image(&self, format: &str, picture_path: &str, full_path: &Path) -> Result<()> {
+        let mut response = self
+            .get_image(format, picture_path)
+            .await
+            .context("Failed to get image from tmdb")?;
+
+        let mut file = tokio::fs::File::create(full_path)
+            .await
+            .context("Failed to create file for saving image")?;
+        while let Some(chunk) = response
+            .chunk()
+            .await
+            .context("Failed to get response chunk")?
+        {
+            file.write_all(&chunk)
+                .await
+                .context("Failed to write image file")?;
+        }
+
+        Ok(())
+    }
+
+    async fn get_image(&self, format: &str, picture_path: &str) -> Result<Response> {
         let url = format!("https://image.tmdb.org/t/p/{}/{}", format, picture_path);
 
-        let mut response = self.client.get(url).send().await?;
+        let response = self
+            .client
+            .get(&url)
+            .send()
+            .await
+            .with_context(|| format!("Failed to get response for url: {}", &url))?;
 
         if !response.status().is_success() {
-            println!("HTTP error: {}", response.status());
-            return Ok(());
+            return Err(anyhow!("HTTP error: {}", response.status()));
         }
 
         if let Some(content_type) = response.headers().get(reqwest::header::CONTENT_TYPE) {
             if let Ok(content_type_str) = content_type.to_str() {
                 if !content_type_str.starts_with("image/") {
-                    println!("Response is not an image");
-                    return Ok(());
+                    return Err(anyhow!("Response is not an image for url: {}", &url));
                 }
             }
-
-            let mut file = tokio::fs::File::create(full_path).await?;
-            while let Some(chunk) = response.chunk().await? {
-                file.write_all(&chunk).await?;
-            }
         }
-        Ok(())
+        return Ok(response);
     }
-
     // endregion
 }
