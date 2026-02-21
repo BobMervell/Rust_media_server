@@ -1,6 +1,8 @@
+use anyhow::{Context, Result, anyhow};
 use serde::Deserialize;
 use std::fmt;
 
+// region: ---- GENRE ----
 #[derive(Deserialize, Debug, Clone)]
 pub struct Genre {
     id: i64,
@@ -24,7 +26,9 @@ impl Genre {
         &self.name
     }
 }
+// endregion
 
+// region: ---- CAST ----
 #[derive(Deserialize, Debug, Clone)]
 pub struct Cast {
     #[serde(skip_deserializing)]
@@ -75,7 +79,9 @@ impl Cast {
         self.picture_path = new_path
     }
 }
+// endregion
 
+// region: ---- CREW ----
 #[derive(Deserialize, Debug, Clone)]
 pub struct Crew {
     #[serde(skip_deserializing)]
@@ -126,6 +132,7 @@ impl Crew {
         self.picture_path = new_path
     }
 }
+// endregion
 
 #[derive(Debug, Clone)]
 pub struct MovieData {
@@ -147,7 +154,7 @@ pub struct MovieData {
     cast: Vec<Cast>,
     crew: Vec<Crew>,
 }
-
+// region: ---- DISPLAY ----
 impl fmt::Display for MovieData {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
@@ -189,29 +196,20 @@ impl fmt::Display for MovieData {
         )
     }
 }
-impl MovieData {
-    pub fn new(path: String) -> Self {
-        let mut file_year = "";
-        let mut file_optional_info = "";
-        let mut file_title = "";
+// endregion
 
-        if let Some(file_name) = path.rsplit('/').next() {
-            if let (Some(start), Some(end)) = (file_name.find('('), file_name.find(')')) {
-                file_year = &file_name[start + 1..end];
-                file_title = &file_name[..start - 1];
-            } else {
-                println!("No date value in file: {}", path);
-            }
-            if let (Some(start), Some(end)) = (file_name.find('['), file_name.find(']')) {
-                file_optional_info = &file_name[start + 1..end];
-            }
-        }
-        Self {
+impl MovieData {
+    pub fn new(path: &str) -> Result<Self> {
+        let file_name = path.rsplit('/').next().unwrap_or(&path);
+        let (file_title, file_year, file_optional_info) = Self::parse_file_name(file_name)
+            .with_context(|| format!("Failed to parse file: {}", &path))?;
+
+        Ok(Self {
             id: 0,
             file_path: path.to_owned().to_lowercase(),
-            file_title: file_title.to_owned().to_lowercase(),
-            file_year: file_year.to_owned().to_lowercase(),
-            file_optional_info: file_optional_info.to_owned().to_lowercase(),
+            file_title: file_title.to_lowercase(),
+            file_year: file_year.to_lowercase(),
+            file_optional_info: file_optional_info.to_lowercase(),
             tmdb_id: 0,
             original_title: "".to_owned(),
             title: "".to_owned(),
@@ -224,7 +222,28 @@ impl MovieData {
             backdrop: None,
             cast: vec![],
             crew: vec![],
+        })
+    }
+
+    fn parse_file_name(name: &str) -> Result<(String, String, String)> {
+        let file_title;
+        let file_year;
+        let mut file_optional_info = "";
+
+        if let (Some(start), Some(end)) = (name.find('('), name.find(')')) {
+            file_year = &name[start + 1..end];
+            file_title = &name[..start - 1];
+        } else {
+            return Err(anyhow!("No date value found in file: {}", name));
         }
+        if let (Some(start), Some(end)) = (name.find('['), name.find(']')) {
+            file_optional_info = &name[start + 1..end];
+        }
+        return Ok((
+            file_title.to_string(),
+            file_year.to_string(),
+            file_optional_info.to_string(),
+        ));
     }
 
     // region: ----- GETTERS -----

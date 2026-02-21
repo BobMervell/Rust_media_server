@@ -1,7 +1,8 @@
 use crate::movie_data::movie_data::MovieData;
 use anyhow::{Context, Result};
 use smb::{
-    Client, ClientConfig, Directory, FileAccessMask, FileDirectoryInformation, Resource, UncPath};
+    Client, ClientConfig, Directory, FileAccessMask, FileDirectoryInformation, Resource, UncPath,
+};
 use std::{io, str::FromStr, sync::Arc};
 use trpl::StreamExt;
 
@@ -53,7 +54,6 @@ impl SmbExplorer {
     pub async fn fetch_movies(&self) -> Result<Vec<MovieData>> {
         let root_path = "";
         let movies = self.explore_path(root_path).await;
-
         return movies;
     }
 
@@ -77,8 +77,21 @@ impl SmbExplorer {
                 let file_path = self.parse_file_path(&entry, path);
                 if self.is_video_file(&entry.file_name.to_string()) && self.is_not_featurette(&path)
                 {
-                    let movie = MovieData::new(file_path);
-                    movies.push(movie);
+                    let res = MovieData::new(&file_path);
+                    match res {
+                        Ok(movie) => {
+                            movies.push(movie);
+                        }
+                        Err(e) => {
+                            // TODO add parsed failed movies to a list for user
+                            tracing::error!(
+                                //important to have :? for complete error
+                                "Error, failed to initiate movie data: {} \n Caused by: {:?}",
+                                &file_path,
+                                e
+                            );
+                        }
+                    }
                 }
             }
         }
