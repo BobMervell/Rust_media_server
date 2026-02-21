@@ -42,23 +42,24 @@ async fn retrieve_media() -> Result<()> {
         .await
         .context("Failed to retrieve movie list")?;
 
-    // let client = TMDBClient::new().context("Failed to create TMDB client")?;
+    let client = TMDBClient::new().context("Failed to create TMDB client")?;
+
     // // let movie_test = MovieData::new("la la land (2016)/la la land (2016).mp4".to_string());
     // // let mut movies: Vec<MovieData> = Vec::new();
     // // movies.push(movie_test);
 
-    // let mut data_saver = DataSaver::new("movie_db.db".to_string())
-    //     .context("Failed to create database connection")?;
-    // data_saver.create_movie_table();
-    // data_saver.create_person_table();
-    // data_saver.create_genre_table();
-    // data_saver.create_movie_genre_table();
+    let mut data_saver = DataSaver::new("movie_db.db".to_string())
+        .context("Failed to create database connection")?;
+    data_saver.create_movie_table();
+    data_saver.create_person_table();
+    data_saver.create_genre_table();
+    data_saver.create_movie_genre_table();
 
-    // for movie_data in movies.iter_mut() {
-    //     update_movie_basics(movie_data, &client).await;
-    //     update_movie_details(movie_data, &client).await;
-    //     update_movie_credits(movie_data, &client).await;
-    //     data_saver.push_movie(movie_data.clone());
-    // }
+    for movie_data in movies.iter_mut() {
+        update_movie_basics(movie_data, &client).await;
+        update_movie_details(movie_data, &client).await;
+        update_movie_credits(movie_data, &client).await;
+        data_saver.push_movie(movie_data.clone());
+    }
     Ok(())
 }
