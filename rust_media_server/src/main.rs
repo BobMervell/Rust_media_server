@@ -44,16 +44,16 @@ async fn retrieve_media() -> Result<()> {
 
     let client = TMDBClient::new().context("Failed to create TMDB client")?;
 
-    // // let movie_test = MovieData::new("la la land (2016)/la la land (2016).mp4".to_string());
-    // // let mut movies: Vec<MovieData> = Vec::new();
-    // // movies.push(movie_test);
+    // let movie_test = MovieData::new("la la land (2016)/la la land (2016).mp4".to_string());
+    // let mut movies: Vec<MovieData> = Vec::new();
+    // movies.push(movie_test);
 
     let mut data_saver = DataSaver::new("movie_db.db".to_string())
         .context("Failed to create database connection")?;
-    data_saver.create_movie_table();
-    data_saver.create_person_table();
-    data_saver.create_genre_table();
-    data_saver.create_movie_genre_table();
+    data_saver.create_movie_table()?;
+    data_saver.create_person_table()?;
+    data_saver.create_genre_table()?;
+    data_saver.create_movie_genre_table()?;
 
     for movie_data in movies.iter_mut() {
         update_movie_basics(movie_data, &client).await;
