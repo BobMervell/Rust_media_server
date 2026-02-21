@@ -1,4 +1,5 @@
 use crate::movie_data::movie_data::{Cast, Crew, Genre, MovieData};
+use anyhow::Result;
 use reqwest::{
     Client,
     header::{ACCEPT, AUTHORIZATION, HeaderMap, HeaderValue},
@@ -134,7 +135,7 @@ pub struct TMDBClient {
 }
 
 impl TMDBClient {
-    pub fn new() -> Result<Self, Box<dyn Error>> {
+    pub fn new() -> Result<Self> {
         let mut token = String::new();
         println!("Enter the tmdb token ");
         match io::stdin().read_line(&mut token) {
