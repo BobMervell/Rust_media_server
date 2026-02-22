@@ -1,10 +1,12 @@
 use crate::movie_data::movie_data::MovieData;
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, anyhow};
+use async_stream::stream;
 use smb::{
     Client, ClientConfig, Directory, FileAccessMask, FileDirectoryInformation, Resource, UncPath,
 };
+
 use std::{io, str::FromStr, sync::Arc};
-use trpl::StreamExt;
+use trpl::{Stream, StreamExt};
 
 //TODO replace tempo_smb_connect()
 pub async fn tempo_smb_connect() -> Result<SmbExplorer> {
@@ -51,76 +53,60 @@ impl SmbExplorer {
             .get_tree(&uncpath)
             .await
             .context("Failed to read retrieve remote directory tree")?;
+
         Ok(Self { tree: tree })
     }
 
-    pub async fn fetch_movies(&self) -> Result<Vec<MovieData>> {
-        let root_path = "";
-        let movies = self.explore_path(root_path).await;
-        return movies;
-    }
+    pub fn fetch_movies(&self, path: &str) -> impl Stream<Item = Result<MovieData>> {
+        stream! {
+            let dir = self
+                .read_directory(path)
+                .await
+                .context("Failed to open directory")?;
 
-    async fn explore_path(&self, path: &str) -> Result<Vec<MovieData>> {
-        let mut movies = Vec::new();
-        let entries = self
-            .read_directory(path)
-            .await
-            .context("Failed to iterate over data stream")?;
+            let mut entries = smb::Directory::query::<FileDirectoryInformation>(&dir, "*")
+                .await
+                .with_context(|| format!("Failed to get files info in: {}", path))?;
 
-        for entry in entries {
-            if entry.file_attributes.directory() {
-                let (is_valid, sub_path) = self.parse_sub_path(&entry, path);
-                if is_valid {
-                    let more_movies = Box::pin(self.explore_path(&sub_path))
-                        .await
-                        .with_context(|| format!("Failed to explore path: {}", sub_path))?;
-                    movies.extend(more_movies);
-                }
-            } else {
-                let file_path = self.parse_file_path(&entry, path);
-                if self.is_video_file(&entry.file_name.to_string()) && self.is_not_featurette(&path)
-                {
-                    let res = MovieData::new(&file_path);
-                    match res {
-                        Ok(movie) => {
-                            movies.push(movie);
+            while let Some(entry) = entries.try_next().await? {
+
+                if entry.file_attributes.directory() {
+                    let (is_valid, sub_path) = self.parse_sub_path(&entry, path);
+                    if is_valid {
+
+                        let mut more_movies = Box::pin(self.fetch_movies(&sub_path));
+                        while let Some(movie) = more_movies.try_next().await? {
+                            yield Ok(movie);
                         }
-                        Err(e) => {
-                            // TODO add parsed failed movies to a list for user
-                            tracing::error!(
-                                //important to have :? for complete error
-                                "Error, failed to initiate movie data: {} \n Caused by: {:?}",
-                                &file_path,
-                                e
-                            );
-                        }
+                    }
+                } else {
+
+                    let file_path = self.parse_file_path(&entry, path);
+                    if self.is_video_file(&entry.file_name.to_string()) && self.is_not_featurette(&path)
+                    {
+                        yield MovieData::new(&file_path).with_context(|| format!(
+                                    "Error, failed to initiate movie data: {}",
+                                    &file_path));
                     }
                 }
             }
         }
-        return Ok(movies);
     }
 
-    async fn read_directory(&self, path: &str) -> Result<Vec<FileDirectoryInformation>> {
-        let mut entries = Vec::new();
+    async fn read_directory(&self, path: &str) -> Result<Arc<Directory>> {
         let access_mask = FileAccessMask::new().with_generic_read(true);
 
         let resource = self
             .tree
             .open_existing(&path, access_mask)
             .await
-            .with_context(|| format!("Could not open directory: {}", path))?;
+            .with_context(|| format!("Failed to open ressource: {}", path))?;
 
         if let Resource::Directory(dir) = resource {
-            let dir: Arc<Directory> = Arc::from(dir);
-            let mut data_stream = smb::Directory::query::<FileDirectoryInformation>(&dir, "*")
-                .await
-                .with_context(|| format!("Failed to get files info in: {}", path))?;
-            while let Some(entry) = data_stream.try_next().await? {
-                entries.push(entry);
-            }
+            Ok(Arc::from(dir))
+        } else {
+            return Err(anyhow!("Ressource is not a directory: {}", path));
         }
-        Ok(entries)
     }
 
     fn parse_sub_path(&self, dir_entry: &FileDirectoryInformation, path: &str) -> (bool, String) {
