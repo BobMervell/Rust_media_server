@@ -75,8 +75,16 @@ impl SmbExplorer {
                     if is_valid {
 
                         let mut more_movies = Box::pin(self.fetch_movies(&sub_path));
-                        while let Some(movie) = more_movies.try_next().await? {
-                            yield Ok(movie);
+                        while let Some(movie) = more_movies.next().await {
+                            match movie {
+                                Ok(movie) => {
+                                    yield Ok(movie);
+                                }
+                                Err(e) => {
+                                    yield Err(e);
+                                }
+                            }
+                            
                         }
                     }
                 } else {
