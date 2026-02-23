@@ -1,7 +1,7 @@
-use anyhow::{Context, Ok, Result};
+use anyhow::{Context, Result};
 use rusqlite::{Connection, Transaction};
 
-use crate::movie_data::movie_data::MovieData;
+use crate::movie_data::movie_data::{CreditsMovie, MovieData};
 
 pub struct DataSaver {
     conn: Connection,
@@ -136,12 +136,46 @@ impl DataSaver {
     // endregion
 
     // region: Insert movie data
-    pub fn push_movie(&mut self, m: MovieData) -> Result<()> {
+    pub fn push_movie_data(&mut self, m: MovieData, c: CreditsMovie) -> Result<()> {
         let tx = self
             .conn
             .transaction()
             .context("Failed to open database transaction")?;
 
+        let movie_id = match Self::push_movie(&m, &tx) {
+            Ok(id) => id,
+            Err(e) => {
+                tracing::error!(
+                    "Failed to push movie data for {} \n Caused by: {}",
+                    m.file_path(),
+                    e
+                );
+                return Ok(())
+            }
+        };
+
+        Self::push_genre(movie_id, &m, &tx).map_err(|e|{
+            tracing::error!(
+                "Failed to push movie genre for {}",
+                m.file_path());
+                e
+            })
+            .ok();
+                
+
+        Self::push_credits(movie_id, &c, &tx).map_err(|e| {tracing::error!(
+            "Failed to push movie credits for {}",
+            m.file_path());
+            e
+        })
+        .ok();
+            
+        tx.commit()
+            .context("Failed to commit data insertion into movie table")?;
+        Ok(())
+    }
+
+    fn push_movie(m: &MovieData, tx: &Transaction) -> Result<i64> {
         tx.execute(
             "
         INSERT INTO Movie ( tmdb_id, file_path, file_optional_info, title, original_title,
@@ -162,25 +196,25 @@ impl DataSaver {
                 m.backdrop(),
             ),
         )
-        .with_context(|| format!("Failed to insert new entry into movie table: {}", m.title()))?;
+        .with_context(|| {
+            format!(
+                "Failed to insert new entry into movie table: {}",
+                m.file_path()
+            )
+        })?;
 
         let movie_id = tx
             .query_row(
                 "SELECT id FROM Movie WHERE file_path = ?1",
                 (m.file_path(),),
-                |row| row.get(0),
+                |row| row.get::<_, i64>(0),
             )
-            .context("Error getting movie_idfrom table movie: {}")?;
+            .context("Error getting movie_id from table movie: {}")?;
 
-        Self::push_credits(movie_id, &m, &tx)?;
-        Self::push_genre(movie_id, &m, &tx)?;
-
-        tx.commit()
-            .context("Failed to commit data insertion into movie table")?;
-        Ok(())
+        Ok(movie_id)
     }
 
-    fn push_credits(movie_id: i64, m: &MovieData, tx: &Transaction) -> Result<()> {
+    fn push_credits(movie_id: i64, c: &CreditsMovie, tx: &Transaction) -> Result<()> {
         let mut statement = tx
             .prepare(
                 "INSERT INTO Person (tmdb_id, movie_id, name, job_name, character, picture_path)
@@ -189,7 +223,7 @@ impl DataSaver {
             )
             .context("Failed to prepare statement for credit insertion into Person table")?;
 
-        for cast in m.cast().iter() {
+        for cast in c.credits_cast().iter() {
             statement
                 .execute((
                     cast.tmdb_id(),
@@ -204,7 +238,7 @@ impl DataSaver {
                 })?;
         }
 
-        for crew in m.crew().iter() {
+        for crew in c.credits_crew().iter() {
             statement
                 .execute((
                     crew.tmdb_id(),
