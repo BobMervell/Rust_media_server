@@ -75,7 +75,7 @@ impl SmbExplorer {
             while let Some(entry) = entries.try_next().await? {
                 if entry.file_attributes.directory() {
                     let (is_valid, sub_path) = self.parse_sub_path(&entry, path);
-                    if ! is_valid { 
+                    if ! is_valid {
                         continue;
                     }
 
@@ -93,11 +93,11 @@ impl SmbExplorer {
 
                      match  MovieData::new(&file_path) {
                             Ok(movie) => {
-                                tracing::info!(path = path, success = true, "Movie found,");
+                                tracing::info!(file_path = file_path, success = true, "Movie found,");
                                 yield Ok(movie);
                             }
                             Err(e) => {
-                                tracing::error!(path = path, success = false, error = %e, "Movie found,");
+                                tracing::error!(file_path = file_path, success = false, error = %e, "Movie found,");
                                 yield Err(e);
                             }
                         }
