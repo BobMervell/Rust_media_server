@@ -4,6 +4,7 @@ use async_stream::stream;
 use smb::{
     Client, ClientConfig, Directory, FileAccessMask, FileDirectoryInformation, Resource, UncPath,
 };
+use tracing::info_span;
 
 use std::{io, str::FromStr, sync::Arc};
 use trpl::{Stream, StreamExt};
@@ -58,6 +59,9 @@ impl SmbExplorer {
     }
 
     pub fn fetch_movies(&self, path: &str) -> impl Stream<Item = Result<MovieData>> {
+        let span = info_span!("fetch_movies", path = path);
+        let _enter = span.enter();
+
         stream! {
             let dir = self
                 .read_directory(path)
@@ -69,33 +73,35 @@ impl SmbExplorer {
                 .with_context(|| format!("Failed to get files info in: {}", path))?;
 
             while let Some(entry) = entries.try_next().await? {
-
                 if entry.file_attributes.directory() {
                     let (is_valid, sub_path) = self.parse_sub_path(&entry, path);
-                    if is_valid {
-
-                        let mut more_movies = Box::pin(self.fetch_movies(&sub_path));
-                        while let Some(movie) = more_movies.next().await {
-                            match movie {
-                                Ok(movie) => {
-                                    yield Ok(movie);
-                                }
-                                Err(e) => {
-                                    yield Err(e);
-                                }
-                            }
-                            
-                        }
+                    if ! is_valid { 
+                        continue;
                     }
+
+                    let mut more_movies = Box::pin(self.fetch_movies(&sub_path));
+                    while let Some(movie) = more_movies.next().await {
+                        yield movie
+                    }
+
                 } else {
 
                     let file_path = self.parse_file_path(&entry, path);
-                    if self.is_video_file(&entry.file_name.to_string()) && self.is_not_featurette(&path)
-                    {
-                        yield MovieData::new(&file_path).with_context(|| format!(
-                                    "Error, failed to initiate movie data: {}",
-                                    &file_path));
-                    }
+                    if !self.is_video_file(&entry.file_name.to_string()) || !self.is_not_featurette(&path) {
+                        continue;
+                     }
+
+                     match  MovieData::new(&file_path) {
+                            Ok(movie) => {
+                                tracing::info!(path = path, success = true, "Movie found,");
+                                yield Ok(movie);
+                            }
+                            Err(e) => {
+                                tracing::error!(path = path, success = false, error = %e, "Movie found,");
+                                yield Err(e);
+                            }
+                        }
+
                 }
             }
         }
