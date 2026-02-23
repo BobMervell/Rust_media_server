@@ -123,6 +123,7 @@ impl SmbExplorer {
         }
     }
 
+    // region: ---- PARSE PATHS ----
     fn parse_sub_path(&self, dir_entry: &FileDirectoryInformation, path: &str) -> (bool, String) {
         if dir_entry.file_name == "." || dir_entry.file_name == ".." {
             return (false, "".to_string());
@@ -143,7 +144,8 @@ impl SmbExplorer {
             return format!("{}/{}", path, file_entry.file_name);
         };
     }
-
+    // endregion
+    // region: ---- FILTER VIDEOS ----
     fn is_video_file(&self, file_name: &str) -> bool {
         let video_extensions = ["mp4", "mkv", "avi", "mov", "flv", "wmv", "webm"];
 
@@ -162,4 +164,5 @@ impl SmbExplorer {
             true
         }
     }
+    // endregion
 }
