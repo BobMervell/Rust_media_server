@@ -28,6 +28,36 @@ impl Genre {
 }
 // endregion
 
+// region: ---- CREDITS ----
+#[derive(Deserialize, Debug, Clone)]
+pub struct CreditsMovie {
+    cast: Vec<Cast>,
+    crew: Vec<Crew>,
+}
+impl CreditsMovie {
+    pub fn new() -> Self {
+        Self {
+            cast: Vec::new(),
+            crew: Vec::new(),
+        }
+    }
+
+    pub fn credits_cast(&self) -> &Vec<Cast> {
+        &self.cast
+    }
+    pub fn credits_crew(&self) -> &Vec<Crew> {
+        &self.crew
+    }
+
+    pub fn credits_cast_mut(&mut self) -> &mut Vec<Cast> {
+        &mut self.cast
+    }
+    pub fn credits_crew_mut(&mut self) -> &mut Vec<Crew> {
+        &mut self.crew
+    }
+}
+// endregion
+
 // region: ---- CAST ----
 #[derive(Deserialize, Debug, Clone)]
 pub struct Cast {
@@ -151,8 +181,6 @@ pub struct MovieData {
     poster_large: Option<String>,
     poster_snapshot: Option<String>,
     backdrop: Option<String>,
-    cast: Vec<Cast>,
-    crew: Vec<Crew>,
 }
 // region: ---- DISPLAY ----
 impl fmt::Display for MovieData {
@@ -173,9 +201,7 @@ impl fmt::Display for MovieData {
              Summary:             {}\n\
              Poster large:        {:?}\n\
              Poster snapshot:     {:?}\n\
-             Backdrop:            {:?}\n\
-             Cast;                {:?}\n\
-             Crew:                {:?}",
+             Backdrop:            {:?}",
             self.id,
             self.file_path,
             self.file_title,
@@ -191,8 +217,6 @@ impl fmt::Display for MovieData {
             self.poster_large,
             self.poster_snapshot,
             self.backdrop,
-            self.cast,
-            self.crew
         )
     }
 }
@@ -220,8 +244,6 @@ impl MovieData {
             poster_large: None,
             poster_snapshot: None,
             backdrop: None,
-            cast: vec![],
-            crew: vec![],
         })
     }
 
@@ -307,15 +329,6 @@ impl MovieData {
     pub fn backdrop(&self) -> Option<&String> {
         self.backdrop.as_ref()
     }
-
-    pub fn cast(&self) -> &[Cast] {
-        &self.cast
-    }
-
-    pub fn crew(&self) -> &[Crew] {
-        &self.crew
-    }
-
     // endregion
 
     // region: ------ SETTERS -----
@@ -392,36 +405,6 @@ impl MovieData {
 
     pub fn set_backdrop(&mut self, new_backdrop: Option<String>) -> &mut Self {
         self.backdrop = new_backdrop;
-        self
-    }
-
-    pub fn push_cast(&mut self, new_cast: Cast) -> &mut Self {
-        self.cast.push(new_cast);
-        self
-    }
-
-    pub fn pop_cast(&mut self) -> &mut Self {
-        self.cast.pop();
-        self
-    }
-
-    pub fn remove_cast(&mut self, index: usize) -> &mut Self {
-        self.cast.remove(index);
-        self
-    }
-
-    pub fn push_crew(&mut self, new_crew: Crew) -> &mut Self {
-        self.crew.push(new_crew);
-        self
-    }
-
-    pub fn pop_crew(&mut self) -> &mut Self {
-        self.crew.pop();
-        self
-    }
-
-    pub fn remove_crew(&mut self, index: usize) -> &mut Self {
-        self.crew.remove(index);
         self
     }
     // endregion

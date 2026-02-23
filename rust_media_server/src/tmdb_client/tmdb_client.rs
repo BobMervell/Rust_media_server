@@ -1,4 +1,4 @@
-use crate::movie_data::movie_data::{Cast, Crew, Genre, MovieData};
+use crate::movie_data::movie_data::{Cast, CreditsMovie, Crew, Genre, MovieData};
 use anyhow::{Context, Result, anyhow};
 use reqwest::{
     Client, Response,
@@ -89,44 +89,17 @@ impl MovieSearchResult {
 }
 // endregion
 
-// region: DetailMovieStructs
+// region: MovieGenresStructs
 #[derive(Deserialize, Debug, Clone)]
-pub struct DetailsMovie {
+pub struct MovieGenres {
     genres: Vec<Genre>,
-    poster_path: String,
 }
-impl DetailsMovie {
+impl MovieGenres {
     pub fn genres(&self) -> Vec<Genre> {
         self.genres.clone()
     }
-    pub fn poster_path(&self) -> String {
-        self.poster_path.clone()
-    }
 }
 
-// endregion
-
-// region: CreditMovieStructs
-#[derive(Deserialize, Debug, Clone)]
-pub struct CreditsMovie {
-    cast: Vec<Cast>,
-    crew: Vec<Crew>,
-}
-impl CreditsMovie {
-    pub fn credits_cast(&self) -> &Vec<Cast> {
-        &self.cast
-    }
-    pub fn credits_crew(&self) -> &Vec<Crew> {
-        &self.crew
-    }
-
-    pub fn credits_cast_mut(&mut self) -> &mut Vec<Cast> {
-        &mut self.cast
-    }
-    pub fn credits_crew_mut(&mut self) -> &mut Vec<Crew> {
-        &mut self.crew
-    }
-}
 // endregion
 
 pub struct TMDBClient {
@@ -237,7 +210,7 @@ impl TMDBClient {
         return result_movie;
     }
 
-    pub async fn fetch_movie_details(&self, tmdb_id: i64) -> Result<DetailsMovie> {
+    pub async fn fetch_movie_genres(&self, tmdb_id: i64) -> Result<MovieGenres> {
         let url = format!("{}/movie/{}?language=en-US", TMDB_BASE_URL, &tmdb_id);
 
         let response = self.client.get(&url).send().await.with_context(|| {
@@ -246,7 +219,7 @@ impl TMDBClient {
                 tmdb_id, &url
             )
         })?;
-        let movie_details = response.json::<DetailsMovie>().await.with_context(|| {
+        let movie_details = response.json::<MovieGenres>().await.with_context(|| {
             format!(
                 "Failed to deserialize detail response for movie id: {}, from url: {}",
                 tmdb_id, &url
