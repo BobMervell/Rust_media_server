@@ -14,7 +14,7 @@ use tokio::io::AsyncWriteExt;
 
 const TMDB_BASE_URL: &str = "https://api.themoviedb.org/3";
 
-// region: SearchMovieStructs
+// region: SEARCH MOVIE STRUCT
 #[derive(Serialize)]
 struct SearchParams<'a> {
     query: &'a str,
@@ -89,7 +89,7 @@ impl MovieSearchResult {
 }
 // endregion
 
-// region: MovieGenresStructs
+// region: MOVIE GENRES STRUCT
 #[derive(Deserialize, Debug, Clone)]
 pub struct MovieGenres {
     genres: Vec<Genre>,
@@ -133,7 +133,7 @@ impl TMDBClient {
         Ok(Self { client: client })
     }
 
-    // region: ----- Get movies info -----
+    // region: ----- GET MOVIE DATA -----
     pub async fn get_movie_info(
         &self,
         movie_name: &str,
@@ -251,7 +251,7 @@ impl TMDBClient {
     }
     // endregion
 
-    // region: ----- Get images -----
+    // region: ----- GET IMAGES -----
 
     //TODO change update_images to work with results rather than option
     async fn update_images<T, FGet>(

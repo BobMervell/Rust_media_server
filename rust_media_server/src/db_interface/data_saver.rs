@@ -14,7 +14,7 @@ impl DataSaver {
         Ok(Self { conn: conn })
     }
 
-    // region: Create tables
+    // region: ---- CREATE TABLES ----
     fn create_index(&self, table: &str, column: &str) -> Result<()> {
         let index_name = format!("idx_{}_{}", table.to_lowercase(), column.to_lowercase());
 
@@ -135,7 +135,7 @@ impl DataSaver {
     }
     // endregion
 
-    // region: Insert movie data
+    // region: ---- INSERT DATA ----
     pub fn push_movie_data(&mut self, m: MovieData, c: CreditsMovie) -> Result<()> {
         let tx = self
             .conn

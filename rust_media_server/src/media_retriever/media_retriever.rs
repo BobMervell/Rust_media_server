@@ -59,6 +59,8 @@ fn initiate_db() -> Result<DataSaver> {
     Ok(data_saver)
 }
 
+
+// region: ---- UPDATE MOVIE DATA ---- 
 async fn fetch_movie_data(movie: &mut MovieData, client: &TMDBClient) -> Result<CreditsMovie> {
     let span = debug_span!("fetch_movie_data", movie_path = movie.file_path());
     let _enter = span.enter();
@@ -161,25 +163,9 @@ async fn get_movie_credits(movie: &mut MovieData, client: &TMDBClient) -> Result
         })?;
     Ok(movie_credits)
 }
+// endregion
 
-fn filter_credits(credits: &mut CreditsMovie) {
-    let casts = credits.credits_cast_mut();
-    casts.retain(|cast| !cast.character().contains("uncredited"));
-
-    let crew = credits.credits_crew_mut();
-    crew.retain(|crew| !match crew.department() {
-        "Directing" => is_important_directing(crew.job()),
-        "Production" => is_important_production(crew.job()),
-        "Camera" => is_important_camera(crew.job()),
-        "Sound" => is_important_sound(crew.job()),
-        "Visual Effects" => is_important_vfx(crew.job()),
-        "Writing" => is_important_writing(crew.job()),
-        "Art" => is_important_art(crew.job()),
-        "Costume & Make-Up" => is_important_costumes_makeup(crew.job()),
-        _ => false,
-    });
-}
-
+// region: ---- UPDATE IMAGES ----
 async fn update_movie_posters(movie: &mut MovieData, client: &TMDBClient) -> Result<()> {
     client.update_movie_backdrop(movie).await;
     client.update_movie_poster(movie).await;
@@ -250,8 +236,27 @@ async fn update_crew_images(
 
     return results;
 }
+// endregion
 
-// region: Filter crew
+// region: ---- FILTER CREDITS ----
+fn filter_credits(credits: &mut CreditsMovie) {
+    let casts = credits.credits_cast_mut();
+    casts.retain(|cast| !cast.character().contains("uncredited"));
+
+    let crew = credits.credits_crew_mut();
+    crew.retain(|crew| !match crew.department() {
+        "Directing" => is_important_directing(crew.job()),
+        "Production" => is_important_production(crew.job()),
+        "Camera" => is_important_camera(crew.job()),
+        "Sound" => is_important_sound(crew.job()),
+        "Visual Effects" => is_important_vfx(crew.job()),
+        "Writing" => is_important_writing(crew.job()),
+        "Art" => is_important_art(crew.job()),
+        "Costume & Make-Up" => is_important_costumes_makeup(crew.job()),
+        _ => false,
+    });
+}
+
 fn is_important_directing(job: &str) -> bool {
     match job {
         "Director" => true,
