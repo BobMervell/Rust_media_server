@@ -4,7 +4,7 @@ use async_stream::stream;
 use smb::{
     Client, ClientConfig, Directory, FileAccessMask, FileDirectoryInformation, Resource, UncPath,
 };
-use tracing::info_span;
+use tracing::debug_span;
 
 use std::{io, str::FromStr, sync::Arc};
 use trpl::{Stream, StreamExt};
@@ -59,7 +59,7 @@ impl SmbExplorer {
     }
 
     pub fn fetch_movies(&self, path: &str) -> impl Stream<Item = Result<MovieData>> {
-        let span = info_span!("fetch_movies", path = path);
+        let span = debug_span!("fetch_movies", path = path);
         let _enter = span.enter();
 
         stream! {
@@ -93,11 +93,11 @@ impl SmbExplorer {
 
                      match  MovieData::new(&file_path) {
                             Ok(movie) => {
-                                tracing::info!(file_path = file_path, success = true, "Movie found,");
+                                tracing::debug!(file_path = file_path, success = true, "Movie found");
                                 yield Ok(movie);
                             }
                             Err(e) => {
-                                tracing::error!(file_path = file_path, success = false, error = %e, "Movie found,");
+                                tracing::error!(file_path = file_path, success = false, error = %e, "Movie found but failed");
                                 yield Err(e);
                             }
                         }

@@ -6,7 +6,7 @@ use crate::{
 };
 use anyhow::{Context, Result};
 use futures::stream::{self, StreamExt};
-use tracing::instrument;
+use tracing::{debug_span, instrument};
 
 #[instrument]
 pub async fn retrieve_media() -> Result<()> {
@@ -16,6 +16,8 @@ pub async fn retrieve_media() -> Result<()> {
 
     let mut movies = Box::pin(smb_explorer.fetch_movies(""));
 
+    tracing::info!("Movie retrieval stream started");
+
     let client = TMDBClient::new().context("Failed to create TMDB client")?;
 
     let mut data_saver = initiate_db().context("Failed to initiate database")?;
@@ -24,9 +26,14 @@ pub async fn retrieve_media() -> Result<()> {
         match movie {
             Ok(mut movie) => {
                 let credits = fetch_movie_data(&mut movie, &client).await?;
+
                 update_movie_posters(&mut movie, &client).await?;
+                tracing::debug!(file_path = &movie.file_path() , "Movie posters downloaded");
+
                 update_credits_posters(&credits, &client).await?;
-                data_saver.push_movie_data(movie, credits)?;
+                tracing::debug!(file_path = &movie.file_path() , "Credits posters downloaded");
+
+                data_saver.push_movie_data(movie, credits)?; //trace inside
             }
             Err(e) => {
                 tracing::error!(" Error finding movie, \n Caused by {}", e)
@@ -34,17 +41,9 @@ pub async fn retrieve_media() -> Result<()> {
         }
     }
 
+    tracing::info!("Movie retrieval stream ended");
+
     //movies.for_each_concurrent(10, fetch_movie_data(movie, &client)); possibke to speed up
-    while let Some(movie) = movies.next().await {
-        match movie {
-            Ok(m) => {
-                tracing::info!("Found movie: {}", m.file_path())
-            }
-            Err(e) => {
-                tracing::error!(" Error finding movie, \n Caused by {}", e)
-            }
-        }
-    }
     Ok(())
 }
 
@@ -55,38 +54,46 @@ fn initiate_db() -> Result<DataSaver> {
     data_saver.create_person_table()?;
     data_saver.create_genre_table()?;
     data_saver.create_movie_genre_table()?;
+
+    tracing::info!("Data base initiated");
     Ok(data_saver)
 }
 
 async fn fetch_movie_data(movie: &mut MovieData, client: &TMDBClient) -> Result<CreditsMovie> {
-    //try join possible to speed up
-    let res = update_movie_basics(movie, client).await;
-    match res {
-        Ok(()) => {}
-        Err(e) => {
-            tracing::error!(
-                "Failed to update movie basics for {} \n Caused by: {}",
-                movie.file_path(),
-                e
-            )
-        }
-    }
-    let res = update_movie_genres(movie, client).await;
-    match res {
-        Ok(()) => {}
-        Err(e) => {
-            tracing::error!(
-                "Failed to update movie genres for {} \n Caused by: {}",
-                movie.file_path(),
-                e
-            )
-        }
-    }
+    let span = debug_span!("fetch_movie_data", movie_path = movie.file_path());
+    let _enter = span.enter();
 
-    let res = get_movie_credits(movie, client).await;
-    match res {
+    //try join possible to speed up
+    update_movie_basics(movie, client)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to update movie basics for {}", movie.file_path());
+            e
+        })
+        .ok();
+
+    update_movie_genres(movie, client)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to update movie genre for {}", movie.file_path());
+            e
+        })
+        .ok();
+
+    tracing::debug!(
+        file_path = movie.file_path(),
+        success = true,
+        "Movie data received"
+    );
+
+    match get_movie_credits(movie, client).await {
         Ok(mut credits) => {
             filter_credits(&mut credits);
+            tracing::debug!(
+                file_path = movie.file_path(),
+                success = true,
+                "Movie credits received"
+            );
             Ok(credits)
         }
         Err(e) => {
@@ -98,6 +105,7 @@ async fn fetch_movie_data(movie: &mut MovieData, client: &TMDBClient) -> Result<
             Ok(CreditsMovie::new())
         }
     }
+    //tracing::debug!(file_path = movie.file_path(), success = true, "Movie data received");
 }
 
 async fn update_movie_basics(movie: &mut MovieData, client: &TMDBClient) -> Result<()> {
@@ -121,6 +129,7 @@ async fn update_movie_basics(movie: &mut MovieData, client: &TMDBClient) -> Resu
         .set_poster_large(movie_basics.poster_path().to_owned())
         .set_poster_snapshot(movie_basics.poster_path().to_owned())
         .set_backdrop(movie_basics.backdrop_path().to_owned());
+
     Ok(())
 }
 
