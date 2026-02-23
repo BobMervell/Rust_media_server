@@ -1,4 +1,3 @@
-pub mod data_parser;
 pub mod db_interface;
 pub mod directory_explorer;
 pub mod media_retriever;
