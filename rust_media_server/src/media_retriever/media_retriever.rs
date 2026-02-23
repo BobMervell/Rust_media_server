@@ -25,15 +25,26 @@ pub async fn retrieve_media() -> Result<()> {
     while let Some(movie) = movies.next().await {
         match movie {
             Ok(mut movie) => {
-                let credits = fetch_movie_data(&mut movie, &client).await?;
+                let mut credits = fetch_movie_data(&mut movie, &client).await?;
 
-                update_movie_posters(&mut movie, &client).await?;
-                tracing::debug!(file_path = &movie.file_path() , "Movie posters downloaded");
+                update_movie_posters(&mut movie, &client)
+                    .await
+                    .map_err(|e| {
+                        tracing::error!(
+                            "Failed to update movie backdrop for {} \n Caused by {}",
+                            movie.file_path(),
+                            e
+                        );
+                    })
+                    .ok();
+                tracing::debug!(file_path = &movie.file_path(), "Movie posters downloaded");
 
-                update_credits_posters(&credits, &client).await?;
-                tracing::debug!(file_path = &movie.file_path() , "Credits posters downloaded");
+                update_credits_posters(&mut credits, &client).await?;
+                tracing::debug!(file_path = &movie.file_path(), "Credits posters downloaded");
 
                 data_saver.push_movie_data(movie, credits)?; //trace inside
+
+                
             }
             Err(e) => {
                 tracing::error!(" Error finding movie, \n Caused by {}", e)
@@ -59,8 +70,7 @@ fn initiate_db() -> Result<DataSaver> {
     Ok(data_saver)
 }
 
-
-// region: ---- UPDATE MOVIE DATA ---- 
+// region: ---- UPDATE MOVIE DATA ----
 async fn fetch_movie_data(movie: &mut MovieData, client: &TMDBClient) -> Result<CreditsMovie> {
     let span = debug_span!("fetch_movie_data", movie_path = movie.file_path());
     let _enter = span.enter();
@@ -69,16 +79,22 @@ async fn fetch_movie_data(movie: &mut MovieData, client: &TMDBClient) -> Result<
     update_movie_basics(movie, client)
         .await
         .map_err(|e| {
-            tracing::error!("Failed to update movie basics for {}", movie.file_path());
-            e
+            tracing::error!(
+                "Failed to update movie basics for {} \n Caused by {}",
+                movie.file_path(),
+                e
+            );
         })
         .ok();
 
     update_movie_genres(movie, client)
         .await
         .map_err(|e| {
-            tracing::error!("Failed to update movie genre for {}", movie.file_path());
-            e
+            tracing::error!(
+                "Failed to update movie genre for {} \n Caused by {}",
+                movie.file_path(),
+                e
+            );
         })
         .ok();
 
@@ -107,7 +123,6 @@ async fn fetch_movie_data(movie: &mut MovieData, client: &TMDBClient) -> Result<
             Ok(CreditsMovie::new())
         }
     }
-    //tracing::debug!(file_path = movie.file_path(), success = true, "Movie data received");
 }
 
 async fn update_movie_basics(movie: &mut MovieData, client: &TMDBClient) -> Result<()> {
@@ -167,74 +182,74 @@ async fn get_movie_credits(movie: &mut MovieData, client: &TMDBClient) -> Result
 
 // region: ---- UPDATE IMAGES ----
 async fn update_movie_posters(movie: &mut MovieData, client: &TMDBClient) -> Result<()> {
-    client.update_movie_backdrop(movie).await;
-    client.update_movie_poster(movie).await;
-    client.update_movie_poster_snapshot(movie).await;
+    let backdrop_path = client.update_movie_backdrop(movie).await?;
+    movie.set_backdrop(Some(backdrop_path));
+    let poster_path = client.update_movie_poster(movie).await?;
+    movie.set_poster_large(Some(poster_path));
+
+    let snapshot_path = client.update_movie_poster_snapshot(movie).await?;
+    movie.set_poster_snapshot(Some(snapshot_path));
     Ok(())
 }
 
-async fn update_credits_posters(credits: &CreditsMovie, client: &TMDBClient) -> Result<()> {
-    update_cast_images(credits, client).await;
-    update_crew_images(credits, client).await;
+async fn update_credits_posters(credits: &mut CreditsMovie, client: &TMDBClient) -> Result<()> {
+    update_cast_images(credits, client).await?;
+    update_crew_images(credits, client).await?;
     Ok(())
 }
 
-async fn update_cast_images(
-    movie_credits: &CreditsMovie,
-    client: &TMDBClient,
-) -> Vec<(usize, Option<String>)> {
-    let cast_indx: Vec<usize> = movie_credits
-        .credits_cast()
-        .iter()
-        .enumerate()
-        .map(|(i, _)| i)
-        .collect();
-
+async fn update_cast_images(movie_credits: &mut CreditsMovie, client: &TMDBClient) -> Result<()> {
     let batch_size = 20;
+    let casts = movie_credits.credits_cast();
 
-    let results: Vec<(usize, Option<String>)> = stream::iter(cast_indx)
-        .map(|index| {
-            let cast = &movie_credits.credits_cast()[index];
-
-            async move {
-                let new_path = client.update_cast_images(cast).await;
-                (index, new_path)
-            }
-        })
+    let updates = stream::iter(casts.into_iter().enumerate())
+        .map(|(index, cast)| async move { (index, client.update_cast_images(&cast).await) })
         .buffer_unordered(batch_size)
         .collect::<Vec<_>>()
         .await;
 
-    return results;
+    for (index, result) in updates {
+        if let Ok(path) = result {
+            movie_credits
+                .set_cast_image(index, &path)
+                .map_err(|e| {
+                    tracing::error!(
+                        "Failed to set cast image for path: {} \n Caused by {}",
+                        path,
+                        e
+                    );
+                })
+                .ok();
+        }
+    }
+    Ok(())
 }
 
-async fn update_crew_images(
-    movie_credits: &CreditsMovie,
-    client: &TMDBClient,
-) -> Vec<(usize, Option<String>)> {
-    let crew_indx: Vec<usize> = movie_credits
-        .credits_crew()
-        .iter()
-        .enumerate()
-        .map(|(i, _)| i)
-        .collect();
-
+async fn update_crew_images(movie_credits: &mut CreditsMovie, client: &TMDBClient) -> Result<()> {
     let batch_size = 20;
+    let crews = movie_credits.credits_crew();
 
-    let results: Vec<(usize, Option<String>)> = stream::iter(crew_indx)
-        .map(|index| {
-            let crew = &movie_credits.credits_crew()[index];
-
-            async move {
-                let new_path = client.update_crew_images(crew).await;
-                (index, new_path)
-            }
-        })
+    let updates = stream::iter(crews.into_iter().enumerate())
+        .map(|(index, crew)| async move { (index, client.update_crew_images(&crew).await) })
         .buffer_unordered(batch_size)
         .collect::<Vec<_>>()
         .await;
 
-    return results;
+    for (index, result) in updates {
+        if let Ok(path) = result {
+            movie_credits
+                .set_crew_image(index, &path)
+                .map_err(|e| {
+                    tracing::error!(
+                        "Failed to set crew image for path: {} \n Caused by {}",
+                        path,
+                        e
+                    );
+                })
+                .ok();
+        }
+    }
+    Ok(())
 }
 // endregion
 
