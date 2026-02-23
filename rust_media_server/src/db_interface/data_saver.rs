@@ -156,22 +156,28 @@ impl DataSaver {
 
         Self::push_genre(movie_id, &m, &tx)
             .map_err(|e| {
-                tracing::error!("Failed to push movie genre for {}", m.file_path());
-                e
+                tracing::error!(
+                    "Failed to push movie genre for {} \n Caused by {}",
+                    m.file_path(),
+                    e
+                );
             })
             .ok();
 
         Self::push_credits(movie_id, &c, &tx)
             .map_err(|e| {
-                tracing::error!("Failed to push movie credits for {}", m.file_path());
-                e
+                tracing::error!(
+                    "Failed to push movie credits for {} \n Caused by {}",
+                    m.file_path(),
+                    e
+                );
             })
             .ok();
 
         tx.commit()
             .context("Failed to commit data insertion into movie table")?;
 
-        tracing::debug!(file_path = &m.file_path() , "Movie data saved");
+        tracing::info!(file_path = &m.file_path(), "Movie data saved and ready");
         Ok(())
     }
 

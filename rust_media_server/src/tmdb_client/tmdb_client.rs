@@ -1,16 +1,14 @@
-use crate::movie_data::movie_data::{Cast, CreditsMovie, Crew, Genre, MovieData};
+use crate::{
+    movie_data::movie_data::{Cast, CreditsMovie, Crew, Genre, MovieData},
+    os_interface::file_interface::{create_dir, save_image},
+};
 use anyhow::{Context, Result, anyhow};
 use reqwest::{
     Client, Response,
     header::{ACCEPT, AUTHORIZATION, HeaderMap, HeaderValue},
 };
 use serde::{Deserialize, Serialize};
-use std::{
-    fs::{self},
-    io::{self},
-    path::Path,
-};
-use tokio::io::AsyncWriteExt;
+use std::io;
 
 const TMDB_BASE_URL: &str = "https://api.themoviedb.org/3";
 
@@ -228,6 +226,7 @@ impl TMDBClient {
         Ok(movie_details)
     }
 
+    //TODO return an error if empty (i think it does now but without log)
     pub async fn fetch_movie_credits(&self, tmdb_id: i64) -> Result<CreditsMovie> {
         let url = format!(
             "{}/movie/{}/credits?language=en-US",
@@ -262,37 +261,36 @@ impl TMDBClient {
         subdir: &str,
         image_size: &str,
         get_path: FGet,
-    ) -> Option<String>
+    ) -> Result<String>
     where
         FGet: Fn(&T) -> Option<&String>,
     {
         let picture_path = match get_path(item) {
             Some(p) => p,
-            None => return None,
+            None => return Err(anyhow!("Picture path empty")),
         };
 
-        let (created, dir_path) = match self.create_dir(category, subdir, name) {
-            Ok(bp) => bp,
-            Err(e) => {
-                tracing::error!("Error creating directory for: {} \n Caused by: {}", name, e);
-                return None;
-            }
-        };
+        let (created, dir_path) = create_dir(category, subdir, name)
+            .with_context(|| format!("Error creating directory for: {}", name))?;
 
         if !created {
-            return None;
+            tracing::debug!("Picture path already exists: {}", dir_path);
+            return Ok(dir_path);
         }
 
-        let path = Path::new(&dir_path);
+        let mut response = self
+            .get_image(image_size, picture_path)
+            .await
+            .context("Failed to get image from tmdb")?;
 
-        if let Err(e) = self.save_image(image_size, &picture_path, path).await {
-            tracing::error!("Failed to save image for: {} \n Caused by: {}", name, e);
-            return None;
-        }
-        return Some(dir_path);
+        save_image(&mut response, &dir_path)
+            .await
+            .with_context(|| format!("Failed to save image for: {}", name))?;
+
+        return Ok(dir_path);
     }
 
-    pub async fn update_cast_images(&self, cast: &Cast) -> Option<String> {
+    pub async fn update_cast_images(&self, cast: &Cast) -> Result<String> {
         let cast_name = cast.name().to_owned();
         self.update_images(cast, "person", &cast_name, &cast_name, "w185", |c| {
             c.picture_path()
@@ -300,7 +298,7 @@ impl TMDBClient {
         .await
     }
 
-    pub async fn update_crew_images(&self, crew: &Crew) -> Option<String> {
+    pub async fn update_crew_images(&self, crew: &Crew) -> Result<String> {
         let crew_name = crew.name().to_owned();
         self.update_images(crew, "person", &crew_name, &crew_name, "w185", |c| {
             c.picture_path()
@@ -308,7 +306,7 @@ impl TMDBClient {
         .await
     }
 
-    pub async fn update_movie_poster(&self, movie: &MovieData) -> Option<String> {
+    pub async fn update_movie_poster(&self, movie: &MovieData) -> Result<String> {
         let movie_name = movie.title().to_owned();
         self.update_images(movie, "movie", "poster_large", &movie_name, "w780", |m| {
             m.poster_large()
@@ -316,7 +314,7 @@ impl TMDBClient {
         .await
     }
 
-    pub async fn update_movie_backdrop(&self, movie: &MovieData) -> Option<String> {
+    pub async fn update_movie_backdrop(&self, movie: &MovieData) -> Result<String> {
         let movie_name = movie.title().to_owned();
         self.update_images(movie, "movie", "backdrop", &movie_name, "w1280", |m| {
             m.backdrop()
@@ -324,7 +322,7 @@ impl TMDBClient {
         .await
     }
 
-    pub async fn update_movie_poster_snapshot(&self, movie: &MovieData) -> Option<String> {
+    pub async fn update_movie_poster_snapshot(&self, movie: &MovieData) -> Result<String> {
         let movie_name = movie.title().to_owned();
         self.update_images(
             movie,
@@ -335,52 +333,6 @@ impl TMDBClient {
             |m| m.poster_snapshot(),
         )
         .await
-    }
-
-    //returns a result tuple with true if the directory was created, and false if it already exists
-    fn create_dir(
-        &self,
-        parent_folder_name: &str,
-        folder_name: &str,
-        file_name: &str,
-    ) -> Result<(bool, String)> {
-        let mut save_dir =
-            std::env::current_dir().context("Failed to retrieve current working directory")?;
-        save_dir.push("images");
-        save_dir.push(parent_folder_name);
-        save_dir.push(folder_name);
-        let full_path = save_dir.join(file_name);
-
-        if full_path.exists() {
-            Ok((false, full_path.to_string_lossy().to_string()))
-        } else {
-            fs::create_dir_all(&save_dir).with_context(|| {
-                format!("Failed to create directories for path {:?}", &save_dir)
-            })?;
-            Ok((true, full_path.to_string_lossy().to_string()))
-        }
-    }
-
-    async fn save_image(&self, format: &str, picture_path: &str, full_path: &Path) -> Result<()> {
-        let mut response = self
-            .get_image(format, picture_path)
-            .await
-            .context("Failed to get image from tmdb")?;
-
-        let mut file = tokio::fs::File::create(full_path)
-            .await
-            .context("Failed to create file for saving image")?;
-        while let Some(chunk) = response
-            .chunk()
-            .await
-            .context("Failed to get response chunk")?
-        {
-            file.write_all(&chunk)
-                .await
-                .context("Failed to write image file")?;
-        }
-
-        Ok(())
     }
 
     async fn get_image(&self, format: &str, picture_path: &str) -> Result<Response> {

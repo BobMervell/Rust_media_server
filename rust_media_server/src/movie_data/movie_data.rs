@@ -55,6 +55,25 @@ impl CreditsMovie {
     pub fn credits_crew_mut(&mut self) -> &mut Vec<Crew> {
         &mut self.crew
     }
+
+    pub fn set_cast_image(&mut self, indx: usize, image_path: &str) -> Result<()> {
+        if indx > self.cast.len() - 1 {
+            return Err(anyhow!(
+                "index value out of bounds while trying to set cast image path"
+            ));
+        }
+        self.cast[indx].set_picture_path(Some(image_path.to_owned()));
+        Ok(())
+    }
+    pub fn set_crew_image(&mut self, indx: usize, image_path: &str) -> Result<()> {
+        if indx > self.crew.len() - 1 {
+            return Err(anyhow!(
+                "index value out of bounds while trying to set crew image path"
+            ));
+        }
+        self.crew[indx].set_picture_path(Some(image_path.to_owned()));
+        Ok(())
+    }
 }
 // endregion
 
