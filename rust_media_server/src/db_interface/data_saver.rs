@@ -1,6 +1,7 @@
-use rusqlite::{Connection, Result, Transaction};
+use anyhow::{Context, Result};
+use rusqlite::{Connection, Transaction};
 
-use crate::movie_data::movie_data::MovieData;
+use crate::movie_data::movie_data::{CreditsMovie, MovieData};
 
 pub struct DataSaver {
     conn: Connection,
@@ -8,13 +9,14 @@ pub struct DataSaver {
 
 impl DataSaver {
     pub fn new(db_path: String) -> Result<Self> {
-        let conn = Connection::open(&db_path)?;
-
+        let conn = Connection::open(&db_path)
+            .with_context(|| format!("Failed to open database connection at : {}", &db_path))?;
         Ok(Self { conn: conn })
     }
 
-    // region: Create tables
-    fn create_index(&self, table: &str, column: &str) {
+    // region: ---- CREATE TABLES ---
+    /// Helper to an index on the specified column of a SQLite table.
+    fn create_index(&self, table: &str, column: &str) -> Result<()> {
         let index_name = format!("idx_{}_{}", table.to_lowercase(), column.to_lowercase());
 
         let query = format!(
@@ -22,16 +24,20 @@ impl DataSaver {
             index_name, table, column
         );
 
-        let res = self.conn.execute(&query, []);
+        self.conn.execute(&query, []).with_context(|| {
+            format!(
+                "Failed to create index for table: {} and column: {}",
+                table, column
+            )
+        })?;
 
-        if let Err(e) = res {
-            println!("Error creating index {}: {}", index_name, e);
-        }
+        Ok(())
     }
 
-    pub fn create_movie_table(&mut self) {
-        let res = self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS Movie (
+    pub fn create_movie_table(&mut self) -> Result<()> {
+        self.conn
+            .execute(
+                "CREATE TABLE IF NOT EXISTS Movie (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 tmdb_id INTEGER,
                 file_path TEXT NOT NULL UNIQUE,
@@ -45,21 +51,21 @@ impl DataSaver {
                 poster_snapshot TEXT NOT NULL,
                 backdrop TEXT NOT NULL
             )",
-            (),
-        );
+                (),
+            )
+            .context("Failed to create movie table")?;
 
-        if let Err(e) = res {
-            println!("Error creation table Movie: {}", e);
-        }
+        self.create_index("Movie", "title")?;
+        self.create_index("Movie", "release_date")?;
+        self.create_index("Movie", "tmdb_id")?;
 
-        self.create_index("Movie", "title");
-        self.create_index("Movie", "release_date");
-        self.create_index("Movie", "tmdb_id");
+        Ok(())
     }
 
-    pub fn create_person_table(&mut self) {
-        let res = self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS Person (
+    pub fn create_person_table(&mut self) -> Result<()> {
+        self.conn
+            .execute(
+                "CREATE TABLE IF NOT EXISTS Person (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 tmdb_id INTEGER,
                 movie_id INTEGER,
@@ -70,78 +76,115 @@ impl DataSaver {
                 FOREIGN KEY (movie_id) REFERENCES Movie(id)
             );
             ",
-            (),
-        );
-        if let Err(e) = res {
-            println!("Error creation table Person: {}", e);
-        }
+                (),
+            )
+            .context("Failed to create person table")?;
 
-        self.create_index("Person", "name");
-        self.create_index("Person", "job_name");
+        self.create_index("Person", "name")?;
+        self.create_index("Person", "job_name")?;
 
-        let res = self.conn.execute(
-            "CREATE UNIQUE INDEX IF NOT EXISTS idx_cast_tmdb_movie_character_job
+        self.conn
+            .execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS idx_cast_tmdb_movie_character_job
          ON Person (tmdb_id, movie_id, character, job_name);",
-            [],
-        );
-        if let Err(e) = res {
-            println!(
-                "Error creating index composite index for person table: {}",
-                e
-            );
-        }
+                [],
+            )
+            .context("Failed to create unique composite index for table: Person")?;
+
+        Ok(())
     }
 
-    pub fn create_genre_table(&mut self) {
-        let res = self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS Genre (
+    pub fn create_genre_table(&mut self) -> Result<()> {
+        self.conn
+            .execute(
+                "CREATE TABLE IF NOT EXISTS Genre (
                 id INTEGER PRIMARY KEY,
                 name TEXT NOT NULL);
             ",
-            (),
-        );
-        if let Err(e) = res {
-            println!("Error creation table Genre: {}", e);
-        }
+                (),
+            )
+            .context("Failed to create genre table")?;
+        Ok(())
     }
 
-    pub fn create_movie_genre_table(&mut self) {
-        let res = self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS Movie_Genre (
+    pub fn create_movie_genre_table(&mut self) -> Result<()> {
+        self.conn
+            .execute(
+                "CREATE TABLE IF NOT EXISTS Movie_Genre (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 movie_id INTEGER NOT NULL,
                 genre_id INTEGER NOT NULL,
                 FOREIGN KEY (movie_id) REFERENCES Movie(id),
                 FOREIGN KEY (genre_id) REFERENCES Genre(id)
             );",
-            (),
-        );
+                (),
+            )
+            .context("Failed to create genre table")?;
 
-        if let Err(e) = res {
-            println!("{}", e)
-        }
-
-        self.create_index("Genre", "name");
-        let res = self.conn.execute(
+        self.create_index("Genre", "name")?;
+        self.conn.execute(
             "CREATE UNIQUE INDEX IF NOT EXISTS idx_movie_genre
          ON Movie_Genre (movie_id, genre_id);",
             [],
-        );
-        if let Err(e) = res {
-            println!(
-                "Error creating index composite index for genre_movie table: {}",
-                e
-            );
-        }
-    }
+        ).with_context(|| {
+            format!(
+                "Failed to create composite index for table: movie_genre and columns: movie_id and genre_id"
+            )
+        })?;
 
+        Ok(())
+    }
     // endregion
 
-    // region: Insert movie data
-    pub fn push_movie(&mut self, m: MovieData) {
-        let tx = self.conn.transaction().unwrap();
+    // region: ---- INSERT DATA ----
+    /// Persists all movie-related data, including basic information, genres, and credits.
+    pub fn push_movie_data(&mut self, m: MovieData, c: CreditsMovie) -> Result<()> {
+        let tx = self
+            .conn
+            .transaction()
+            .context("Failed to open database transaction")?;
 
-        let res = tx.execute(
+        let movie_id = match Self::push_movie(&m, &tx) {
+            Ok(id) => id,
+            Err(e) => {
+                tracing::error!(
+                    "Failed to push movie data for {} \n Caused by: {:?}",
+                    m.file_path(),
+                    e
+                );
+                return Ok(());
+            }
+        };
+
+        Self::push_genre(movie_id, &m, &tx)
+            .map_err(|e| {
+                tracing::error!(
+                    "Failed to push movie genre for {} \n Caused by {:?}",
+                    m.file_path(),
+                    e
+                );
+            })
+            .ok();
+
+        Self::push_credits(movie_id, &c, &tx)
+            .map_err(|e| {
+                tracing::error!(
+                    "Failed to push movie credits for {} \n Caused by {:?}",
+                    m.file_path(),
+                    e
+                );
+            })
+            .ok();
+
+        tx.commit()
+            .context("Failed to commit data insertion into movie table")?;
+
+        tracing::info!(file_path = &m.file_path(), "Movie data saved and ready");
+        Ok(())
+    }
+
+    fn push_movie(m: &MovieData, tx: &Transaction) -> Result<i64> {
+        tx.execute(
             "
         INSERT INTO Movie ( tmdb_id, file_path, file_optional_info, title, original_title,
         release_date, summary, vote_average, poster_large, poster_snapshot, backdrop)
@@ -160,106 +203,102 @@ impl DataSaver {
                 m.poster_snapshot(),
                 m.backdrop(),
             ),
-        );
+        )
+        .with_context(|| {
+            format!(
+                "Failed to insert new entry into movie table: {}",
+                m.file_path()
+            )
+        })?;
 
-        if let Err(e) = res {
-            println!("Error pushing data to table movie: {}", e);
-        }
+        let movie_id = tx
+            .query_row(
+                "SELECT id FROM Movie WHERE file_path = ?1",
+                (m.file_path(),),
+                |row| row.get::<_, i64>(0),
+            )
+            .with_context(|| {
+                format!(
+                    "Error getting last movie_id from table movie for: {}",
+                    m.file_path()
+                )
+            })?;
 
-        let res = tx.query_row(
-            "SELECT id FROM Movie WHERE file_path = ?1",
-            (m.file_path(),),
-            |row| row.get(0),
-        );
-        match res {
-            Ok(movie_id) => {
-                DataSaver::push_credits(movie_id, &m, &tx);
-                DataSaver::push_genre(movie_id, &m, &tx);
-            }
-
-            Err(e) => {
-                println!("Error getting movie_idfrom table movie: {}", e);
-            }
-        }
-
-        let res = tx.commit();
-
-        if let Err(e) = res {
-            println!("error commiting: {}", e)
-        }
+        Ok(movie_id)
     }
 
-    fn push_credits(movie_id: i64, m: &MovieData, tx: &Transaction) {
-        let res = tx.prepare(
-            "INSERT INTO Person (tmdb_id, movie_id, name, job_name, character, picture_path)
+    fn push_credits(movie_id: i64, c: &CreditsMovie, tx: &Transaction) -> Result<()> {
+        let mut statement = tx
+            .prepare(
+                "INSERT INTO Person (tmdb_id, movie_id, name, job_name, character, picture_path)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6)
          ON CONFLICT(tmdb_id, movie_id, character, job_name) DO NOTHING",
-        );
+            )
+            .context("Failed to prepare statement for credit insertion into Person table")?;
 
-        match res {
-            Ok(mut statement) => {
-                for cast in m.cast().iter() {
-                    let res = statement.execute((
-                        cast.tmdb_id(),
-                        movie_id,
-                        cast.name(),
-                        "actor",
-                        cast.character(),
-                        cast.picture_path(),
-                    ));
-                    if let Err(e) = res {
-                        println!("Error pushing data to table person: {}", e);
-                    }
-                }
-
-                for crew in m.crew().iter() {
-                    let res = statement.execute((
-                        crew.tmdb_id(),
-                        movie_id,
-                        crew.name(),
-                        crew.job(),
-                        "N/A",
-                        crew.picture_path(),
-                    ));
-                    if let Err(e) = res {
-                        println!("Error pushing data to table person: {}", e);
-                        println!("{}", crew)
-                    }
-                }
-            }
-
-            Err(e) => {
-                println!("Error preparing statement for credit push: {}", e)
-            }
+        for cast in c.credits_cast().iter() {
+            statement
+                .execute((
+                    cast.tmdb_id(),
+                    movie_id,
+                    cast.name(),
+                    "actor",
+                    cast.character(),
+                    cast.picture_path(),
+                ))
+                .with_context(|| {
+                    format!("Failed to insert cast into Person table for: {}", cast)
+                })?;
         }
+
+        for crew in c.credits_crew().iter() {
+            statement
+                .execute((
+                    crew.tmdb_id(),
+                    movie_id,
+                    crew.name(),
+                    crew.job(),
+                    "N/A",
+                    crew.picture_path(),
+                ))
+                .with_context(|| {
+                    format!("Failed to insert crew into Person table for: {}", crew)
+                })?;
+        }
+        Ok(())
     }
 
-    fn push_genre(movie_id: i64, m: &MovieData, tx: &Transaction) {
+    fn push_genre(movie_id: i64, m: &MovieData, tx: &Transaction) -> Result<()> {
         for genre in m.genres().iter() {
-            let res = tx.execute(
+            tx.execute(
                 "INSERT INTO Genre ( id, name)
                 VALUES (?1, ?2)
                 ON CONFLICT(id) DO NOTHING;",
                 (genre.id(), genre.name()),
-            );
-            DataSaver::push_movie_genre(genre.id(), movie_id, tx);
-            if let Err(e) = res {
-                println!("Error pushing data to table genre: {}", e);
-            }
+            )
+            .with_context(|| {
+                format!("Failed to insert new entry into Genre table for: {}", genre)
+            })?;
+
+            Self::push_movie_genre(genre.id(), movie_id, tx)?;
         }
+        Ok(())
     }
 
-    fn push_movie_genre(genre_id: i64, movie_id: i64, tx: &Transaction) {
-        let res = tx.execute(
+    fn push_movie_genre(genre_id: i64, movie_id: i64, tx: &Transaction) -> Result<()> {
+        tx.execute(
             "INSERT INTO Movie_Genre ( movie_id, genre_id)
                 VALUES (?1, ?2)
                 ON CONFLICT(movie_id, genre_id) DO NOTHING;",
             (movie_id, genre_id),
-        );
-        if let Err(e) = res {
-            println!("Error pushing data to table movie_genre: {}", e);
-        }
+        )
+        .with_context(|| {
+            format!(
+                "Failed to insert entry into Movie_Genre table for genre: {} and movie {}",
+                genre_id, movie_id
+            )
+        })?;
+        Ok(())
     }
-
     // endregion
 }

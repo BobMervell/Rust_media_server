@@ -1,6 +1,8 @@
+use anyhow::{Context, Result, anyhow};
 use serde::Deserialize;
 use std::fmt;
 
+// region: ---- GENRE ----
 #[derive(Deserialize, Debug, Clone)]
 pub struct Genre {
     id: i64,
@@ -24,7 +26,58 @@ impl Genre {
         &self.name
     }
 }
+// endregion
 
+// region: ---- CREDITS ----
+#[derive(Deserialize, Debug, Clone)]
+pub struct CreditsMovie {
+    cast: Vec<Cast>,
+    crew: Vec<Crew>,
+}
+impl CreditsMovie {
+    pub fn new() -> Self {
+        Self {
+            cast: Vec::new(),
+            crew: Vec::new(),
+        }
+    }
+
+    pub fn credits_cast(&self) -> &Vec<Cast> {
+        &self.cast
+    }
+    pub fn credits_crew(&self) -> &Vec<Crew> {
+        &self.crew
+    }
+
+    pub fn credits_cast_mut(&mut self) -> &mut Vec<Cast> {
+        &mut self.cast
+    }
+    pub fn credits_crew_mut(&mut self) -> &mut Vec<Crew> {
+        &mut self.crew
+    }
+
+    pub fn set_cast_image(&mut self, indx: usize, image_path: &str) -> Result<()> {
+        if indx > self.cast.len() - 1 {
+            return Err(anyhow!(
+                "index value out of bounds while trying to set cast image path"
+            ));
+        }
+        self.cast[indx].set_picture_path(Some(image_path.to_owned()));
+        Ok(())
+    }
+    pub fn set_crew_image(&mut self, indx: usize, image_path: &str) -> Result<()> {
+        if indx > self.crew.len() - 1 {
+            return Err(anyhow!(
+                "index value out of bounds while trying to set crew image path"
+            ));
+        }
+        self.crew[indx].set_picture_path(Some(image_path.to_owned()));
+        Ok(())
+    }
+}
+// endregion
+
+// region: ---- CAST ----
 #[derive(Deserialize, Debug, Clone)]
 pub struct Cast {
     #[serde(skip_deserializing)]
@@ -75,7 +128,9 @@ impl Cast {
         self.picture_path = new_path
     }
 }
+// endregion
 
+// region: ---- CREW ----
 #[derive(Deserialize, Debug, Clone)]
 pub struct Crew {
     #[serde(skip_deserializing)]
@@ -126,6 +181,7 @@ impl Crew {
         self.picture_path = new_path
     }
 }
+// endregion
 
 #[derive(Debug, Clone)]
 pub struct MovieData {
@@ -144,10 +200,8 @@ pub struct MovieData {
     poster_large: Option<String>,
     poster_snapshot: Option<String>,
     backdrop: Option<String>,
-    cast: Vec<Cast>,
-    crew: Vec<Crew>,
 }
-
+// region: ---- DISPLAY ----
 impl fmt::Display for MovieData {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
@@ -166,9 +220,7 @@ impl fmt::Display for MovieData {
              Summary:             {}\n\
              Poster large:        {:?}\n\
              Poster snapshot:     {:?}\n\
-             Backdrop:            {:?}\n\
-             Cast;                {:?}\n\
-             Crew:                {:?}",
+             Backdrop:            {:?}",
             self.id,
             self.file_path,
             self.file_title,
@@ -184,34 +236,23 @@ impl fmt::Display for MovieData {
             self.poster_large,
             self.poster_snapshot,
             self.backdrop,
-            self.cast,
-            self.crew
         )
     }
 }
-impl MovieData {
-    pub fn new(path: String) -> Self {
-        let mut file_year = "";
-        let mut file_optional_info = "";
-        let mut file_title = "";
+// endregion
 
-        if let Some(file_name) = path.rsplit('/').next() {
-            if let (Some(start), Some(end)) = (file_name.find('('), file_name.find(')')) {
-                file_year = &file_name[start + 1..end];
-                file_title = &file_name[..start - 1];
-            } else {
-                println!("No date value in file: {}", path);
-            }
-            if let (Some(start), Some(end)) = (file_name.find('['), file_name.find(']')) {
-                file_optional_info = &file_name[start + 1..end];
-            }
-        }
-        Self {
+impl MovieData {
+    pub fn new(path: &str) -> Result<Self> {
+        let file_name = path.rsplit('/').next().unwrap_or(&path);
+        let (file_title, file_year, file_optional_info) = Self::parse_file_name(file_name)
+            .with_context(|| format!("Failed to parse file: {}", &path))?;
+
+        Ok(Self {
             id: 0,
             file_path: path.to_owned().to_lowercase(),
-            file_title: file_title.to_owned().to_lowercase(),
-            file_year: file_year.to_owned().to_lowercase(),
-            file_optional_info: file_optional_info.to_owned().to_lowercase(),
+            file_title: file_title.to_lowercase(),
+            file_year: file_year.to_lowercase(),
+            file_optional_info: file_optional_info.to_lowercase(),
             tmdb_id: 0,
             original_title: "".to_owned(),
             title: "".to_owned(),
@@ -222,9 +263,29 @@ impl MovieData {
             poster_large: None,
             poster_snapshot: None,
             backdrop: None,
-            cast: vec![],
-            crew: vec![],
+        })
+    }
+
+    /// Parses a filename to extract the title, year, and optional metadata, then updates the corresponding movie record.
+    fn parse_file_name(name: &str) -> Result<(String, String, String)> {
+        let file_title;
+        let file_year;
+        let mut file_optional_info = "";
+
+        if let (Some(start), Some(end)) = (name.find('('), name.find(')')) {
+            file_year = &name[start + 1..end];
+            file_title = &name[..start - 1];
+        } else {
+            return Err(anyhow!("No date value found in file: {}", name));
         }
+        if let (Some(start), Some(end)) = (name.find('['), name.find(']')) {
+            file_optional_info = &name[start + 1..end];
+        }
+        return Ok((
+            file_title.to_string(),
+            file_year.to_string(),
+            file_optional_info.to_string(),
+        ));
     }
 
     // region: ----- GETTERS -----
@@ -288,15 +349,6 @@ impl MovieData {
     pub fn backdrop(&self) -> Option<&String> {
         self.backdrop.as_ref()
     }
-
-    pub fn cast(&self) -> &[Cast] {
-        &self.cast
-    }
-
-    pub fn crew(&self) -> &[Crew] {
-        &self.crew
-    }
-
     // endregion
 
     // region: ------ SETTERS -----
@@ -373,36 +425,6 @@ impl MovieData {
 
     pub fn set_backdrop(&mut self, new_backdrop: Option<String>) -> &mut Self {
         self.backdrop = new_backdrop;
-        self
-    }
-
-    pub fn push_cast(&mut self, new_cast: Cast) -> &mut Self {
-        self.cast.push(new_cast);
-        self
-    }
-
-    pub fn pop_cast(&mut self) -> &mut Self {
-        self.cast.pop();
-        self
-    }
-
-    pub fn remove_cast(&mut self, index: usize) -> &mut Self {
-        self.cast.remove(index);
-        self
-    }
-
-    pub fn push_crew(&mut self, new_crew: Crew) -> &mut Self {
-        self.crew.push(new_crew);
-        self
-    }
-
-    pub fn pop_crew(&mut self) -> &mut Self {
-        self.crew.pop();
-        self
-    }
-
-    pub fn remove_crew(&mut self, index: usize) -> &mut Self {
-        self.crew.remove(index);
         self
     }
     // endregion

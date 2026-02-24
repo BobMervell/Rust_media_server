@@ -1,135 +1,160 @@
 use crate::movie_data::movie_data::MovieData;
-use futures::{FutureExt, future::BoxFuture};
+use anyhow::{Context, Result, anyhow};
+use async_stream::stream;
 use smb::{
     Client, ClientConfig, Directory, FileAccessMask, FileDirectoryInformation, Resource, UncPath,
-    resource::iter_stream::QueryDirectoryStream,
 };
-use std::{
-    error::Error,
-    str::FromStr,
-    sync::{Arc, Mutex},
-};
-use trpl::StreamExt;
+use tracing::debug_span;
 
+use std::{io, str::FromStr, sync::Arc};
+use trpl::{Stream, StreamExt};
+
+//TODO replace tempo_smb_connect()
+/// Prompts for SMB connection parameters and establishes the SMB connection.
+pub async fn tempo_smb_connect() -> Result<SmbExplorer> {
+    let mut path = String::new();
+    println!("Enter the samba remote path");
+    io::stdin()
+        .read_line(&mut path)
+        .context("Failed to read remote path")?;
+    let path = path.trim_end();
+
+    let mut username = String::new();
+    println!("Enter the username");
+    io::stdin()
+        .read_line(&mut username)
+        .context("Failed to read username")?;
+    let username = username.trim_end();
+
+    let mut password = String::new();
+    println!("Enter the passord");
+    io::stdin()
+        .read_line(&mut password)
+        .context("Failed to read password")?;
+    let password = password.trim_end();
+
+    SmbExplorer::new(path.to_owned(), username.to_owned(), password.to_owned()).await
+}
+
+/// Represents the state and configuration for exploring an SMB shared directory.
 pub struct SmbExplorer {
     tree: Arc<smb::Tree>,
 }
 
 impl SmbExplorer {
-    pub async fn new(
-        path: String,
-        username: String,
-        password: String,
-    ) -> Result<Self, Box<dyn std::error::Error>> {
+    pub async fn new(path: String, username: String, password: String) -> Result<Self> {
         let client = Client::new(ClientConfig::default());
-        let uncpath: UncPath = UncPath::from_str(&path).unwrap();
-        client.share_connect(&uncpath, &username, password).await?;
+        let uncpath: UncPath = UncPath::from_str(&path)
+            .with_context(|| format!("Failed to unwrap path from string: {}", &path))?;
 
-        let tree = client.get_tree(&uncpath).await?;
+        client
+            .share_connect(&uncpath, &username, password)
+            .await
+            .context("Failed to connect to remote")?;
+
+        let tree = client
+            .get_tree(&uncpath)
+            .await
+            .context("Failed to read retrieve remote directory tree")?;
+
         Ok(Self { tree: tree })
     }
 
-    pub async fn fetch_movies(&self) -> Vec<MovieData> {
-        let movies: Arc<Mutex<Vec<MovieData>>> = Arc::new(Mutex::new(Vec::new()));
+    /// Recursively explores an SMB path and returns a stream of discovered movies.
+    ///
+    /// Traverses each subfolder, yielding a MovieData object for every video file
+    /// whose file is not inside a featurette folder. The MovieData is constructed from the file name.
+    pub fn fetch_movies(&self, path: &str) -> impl Stream<Item = Result<MovieData>> {
+        let span = debug_span!("fetch_movies", path = path);
+        let _enter = span.enter();
 
-        println!("starting");
-        let root_path = "";
-        self.explore_path(root_path.to_owned(), Arc::clone(&movies))
-            .await
-            .unwrap();
+        stream! {
+            let dir = self
+                .read_directory(path)
+                .await
+                .context("Failed to open directory")?;
 
-        return movies.lock().unwrap().clone();
-    }
+            let mut entries = smb::Directory::query::<FileDirectoryInformation>(&dir, "*")
+                .await
+                .with_context(|| format!("Failed to get files info in: {}", path))?;
 
-    fn explore_path<'a>(
-        &'a self,
-        root_path: String,
-        movies: Arc<Mutex<Vec<MovieData>>>,
-    ) -> BoxFuture<'a, Result<(), Box<dyn Error>>> {
-        async move {
-            let access_mask = FileAccessMask::new().with_generic_read(true);
-            let resource: Result<Resource, smb::Error> =
-                self.tree.open_existing(&root_path, access_mask).await;
-
-            if let Some(dir) = self.is_directory(resource) {
-                let dir: Arc<Directory> = Arc::from(dir);
-
-                let data_stream =
-                    smb::Directory::query::<FileDirectoryInformation>(&dir, "*").await;
-
-                match data_stream {
-                    Ok(data) => self.handle_stream(data, root_path, movies).await?,
-                    Err(e) => {
-                        println!("err: {}", e);
-                        return Ok(());
+            while let Some(entry) = entries.try_next().await? {
+                if entry.file_attributes.directory() {
+                    let (is_valid, sub_path) = self.parse_sub_path(&entry, path);
+                    if ! is_valid {
+                        continue;
                     }
-                }
-            } else {
-            }
-            Ok(())
-        }
-        .boxed()
-    }
 
-    fn is_directory(&self, resource: Result<Resource, smb::Error>) -> Option<Directory> {
-        match resource {
-            Ok(res) => {
-                if let Resource::Directory(dir) = res {
-                    Some(dir)
+                    let mut more_movies = Box::pin(self.fetch_movies(&sub_path));
+                    while let Some(movie) = more_movies.next().await {
+                        yield movie
+                    }
+
                 } else {
-                    None
+
+                    let file_path = self.parse_file_path(&entry, path);
+                    if !self.is_video_file(&entry.file_name.to_string()) || !self.is_not_featurette(&path) {
+                        continue;
+                     }
+
+                     match  MovieData::new(&file_path) {
+                            Ok(movie) => {
+                                tracing::debug!(file_path = file_path, success = true, "Movie found");
+                                yield Ok(movie);
+                            }
+                            Err(e) => {
+                                tracing::error!(file_path = file_path, success = false, error = ?e, "Movie found but failed");
+                                yield Err(e);
+                            }
+                        }
+
                 }
-            }
-            Err(e) => {
-                println!("Error accessing resource: {}", e);
-                None
             }
         }
     }
 
-    async fn handle_stream<'a>(
-        &self,
-        mut data_stream: QueryDirectoryStream<'a, FileDirectoryInformation>,
-        path: String,
-        movies: Arc<Mutex<Vec<MovieData>>>,
-    ) -> Result<(), Box<dyn Error>> {
-        while let Some(entry) = data_stream.next().await {
-            match entry {
-                Ok(file_info) => {
-                    if file_info.file_attributes.directory() {
-                        //Parse directory path
-                        if file_info.file_name == "." || file_info.file_name == ".." {
-                            continue;
-                        }
+    /// Opens the given SMB file path and returns Ok(directory) if it is a folder, or an error otherwise.
+    async fn read_directory(&self, path: &str) -> Result<Arc<Directory>> {
+        let access_mask = FileAccessMask::new().with_generic_read(true);
 
-                        let sub_path = if path.is_empty() {
-                            file_info.file_name.to_string()
-                        } else {
-                            format!("{}/{}", path, file_info.file_name)
-                        };
-                        self.explore_path(sub_path, Arc::clone(&movies)).await?;
-                    } else {
-                        //parse file path
-                        let movie_path = if path.is_empty() {
-                            file_info.file_name.to_string()
-                        } else {
-                            format!("{}/{}", path, file_info.file_name)
-                        };
-                        if self.is_video_file(&file_info.file_name.to_string())
-                            && self.is_not_featurette(&path)
-                        {
-                            let movie = MovieData::new(movie_path);
-                            println!("{}", movie.file_title());
-                            movies.lock().unwrap().push(movie);
-                        }
-                    }
-                }
-                Err(e) => eprintln!("Error retrieving entry: {:?}", e),
-            }
+        let resource = self
+            .tree
+            .open_existing(&path, access_mask)
+            .await
+            .with_context(|| format!("Failed to open ressource: {}", path))?;
+
+        if let Resource::Directory(dir) = resource {
+            Ok(Arc::from(dir))
+        } else {
+            return Err(anyhow!("Ressource is not a directory: {}", path));
         }
-        Ok(())
     }
 
+    // region: ---- PARSE PATHS ----
+    /// Parses a subfolder path into its components.
+    fn parse_sub_path(&self, dir_entry: &FileDirectoryInformation, path: &str) -> (bool, String) {
+        if dir_entry.file_name == "." || dir_entry.file_name == ".." {
+            return (false, "".to_string());
+        }
+
+        let sub_path = if path.is_empty() {
+            dir_entry.file_name.to_string()
+        } else {
+            format!("{}/{}", path, dir_entry.file_name)
+        };
+        return (true, sub_path);
+    }
+
+    /// Parses a file path into its components.
+    fn parse_file_path(&self, file_entry: &FileDirectoryInformation, path: &str) -> String {
+        if path.is_empty() {
+            return file_entry.file_name.to_string();
+        } else {
+            return format!("{}/{}", path, file_entry.file_name);
+        };
+    }
+    // endregion
+    // region: ---- FILTER VIDEOS ----
     fn is_video_file(&self, file_name: &str) -> bool {
         let video_extensions = ["mp4", "mkv", "avi", "mov", "flv", "wmv", "webm"];
 
@@ -148,4 +173,5 @@ impl SmbExplorer {
             true
         }
     }
+    // endregion
 }
