@@ -13,12 +13,15 @@ pub async fn retrieve_media() -> Result<()> {
     let smb_explorer: SmbExplorer = tempo_smb_connect()
         .await
         .context("Failed to connect to SMB share")?;
+    let client = TMDBClient::new().context("Failed to create TMDB client")?;
+
+    // let res = client.fetch_movie_credits(0).await;
+    // tracing::error!("{:?}",res);
+    // return Ok(());
 
     let mut movies = Box::pin(smb_explorer.fetch_movies(""));
 
     tracing::info!("Movie retrieval stream started");
-
-    let client = TMDBClient::new().context("Failed to create TMDB client")?;
 
     let mut data_saver = initiate_db().context("Failed to initiate database")?;
 
@@ -31,7 +34,7 @@ pub async fn retrieve_media() -> Result<()> {
                     .await
                     .map_err(|e| {
                         tracing::error!(
-                            "Failed to update movie backdrop for {} \n Caused by {}",
+                            "Failed to update movie backdrop for {} \n Caused by {:?}",
                             movie.file_path(),
                             e
                         );
@@ -43,11 +46,9 @@ pub async fn retrieve_media() -> Result<()> {
                 tracing::debug!(file_path = &movie.file_path(), "Credits posters downloaded");
 
                 data_saver.push_movie_data(movie, credits)?; //trace inside
-
-                
             }
             Err(e) => {
-                tracing::error!(" Error finding movie, \n Caused by {}", e)
+                tracing::error!(" Error finding movie, \n Caused by {:?}", e)
             }
         }
     }
@@ -80,7 +81,7 @@ async fn fetch_movie_data(movie: &mut MovieData, client: &TMDBClient) -> Result<
         .await
         .map_err(|e| {
             tracing::error!(
-                "Failed to update movie basics for {} \n Caused by {}",
+                "Failed to update movie basics for {} \n Caused by {:?}",
                 movie.file_path(),
                 e
             );
@@ -91,7 +92,7 @@ async fn fetch_movie_data(movie: &mut MovieData, client: &TMDBClient) -> Result<
         .await
         .map_err(|e| {
             tracing::error!(
-                "Failed to update movie genre for {} \n Caused by {}",
+                "Failed to update movie genre for {} \n Caused by {:?}",
                 movie.file_path(),
                 e
             );
@@ -116,7 +117,7 @@ async fn fetch_movie_data(movie: &mut MovieData, client: &TMDBClient) -> Result<
         }
         Err(e) => {
             tracing::error!(
-                "Failed to update movie credits for {} \n Caused by: {}",
+                "Failed to update movie credits for {} \n Caused by: {:?}",
                 movie.file_path(),
                 e
             );
@@ -214,7 +215,7 @@ async fn update_cast_images(movie_credits: &mut CreditsMovie, client: &TMDBClien
                 .set_cast_image(index, &path)
                 .map_err(|e| {
                     tracing::error!(
-                        "Failed to set cast image for path: {} \n Caused by {}",
+                        "Failed to set cast image for path: {} \n Caused by {:?}",
                         path,
                         e
                     );
@@ -241,7 +242,7 @@ async fn update_crew_images(movie_credits: &mut CreditsMovie, client: &TMDBClien
                 .set_crew_image(index, &path)
                 .map_err(|e| {
                     tracing::error!(
-                        "Failed to set crew image for path: {} \n Caused by {}",
+                        "Failed to set crew image for path: {} \n Caused by {:?}",
                         path,
                         e
                     );
