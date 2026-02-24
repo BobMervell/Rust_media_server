@@ -138,7 +138,7 @@ impl DataSaver {
 
     // region: ---- INSERT DATA ----
     /// Persists all movie-related data, including basic information, genres, and credits.
-    pub fn push_movie_data(&mut self, m: MovieData, c: CreditsMovie) -> Result<()> {
+    pub fn push_movie_data(&mut self, m: &MovieData, c: &CreditsMovie) -> Result<()> {
         let tx = self
             .conn
             .transaction()
@@ -179,7 +179,7 @@ impl DataSaver {
         tx.commit()
             .context("Failed to commit data insertion into movie table")?;
 
-        tracing::info!(file_path = &m.file_path(), "Movie data saved and ready");
+        tracing::debug!(file_path = &m.file_path(), "Movie data saved and ready");
         Ok(())
     }
 
