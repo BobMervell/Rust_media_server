@@ -1,3 +1,4 @@
+/// Module that orchestrates the media retrieval pipeline.
 use crate::{
     db_interface::data_saver::DataSaver,
     directory_explorer::smb_explorer::{SmbExplorer, tempo_smb_connect},
@@ -8,16 +9,16 @@ use anyhow::{Context, Result};
 use futures::stream::{self, StreamExt};
 use tracing::{debug_span, instrument};
 
+/// Runs the primary streaming pipeline for media retrieval.
+///
+/// Discovers media paths, fetches movie metadata, credits, and posters from TMDB,
+/// then persists the collected data and associated poster assets in order.
 #[instrument]
 pub async fn retrieve_media() -> Result<()> {
     let smb_explorer: SmbExplorer = tempo_smb_connect()
         .await
         .context("Failed to connect to SMB share")?;
     let client = TMDBClient::new().context("Failed to create TMDB client")?;
-
-    // let res = client.fetch_movie_credits(0).await;
-    // tracing::error!("{:?}",res);
-    // return Ok(());
 
     let mut movies = Box::pin(smb_explorer.fetch_movies(""));
 
@@ -59,6 +60,7 @@ pub async fn retrieve_media() -> Result<()> {
     Ok(())
 }
 
+/// Initializes the database by creating the database file and required tables.
 fn initiate_db() -> Result<DataSaver> {
     let mut data_saver = DataSaver::new("movie_db.db".to_string())
         .context("Failed to create database connection")?;
@@ -72,6 +74,8 @@ fn initiate_db() -> Result<DataSaver> {
 }
 
 // region: ---- UPDATE MOVIE DATA ----
+
+/// Fetches movie metadata, including basic information, genres, and credits.
 async fn fetch_movie_data(movie: &mut MovieData, client: &TMDBClient) -> Result<CreditsMovie> {
     let span = debug_span!("fetch_movie_data", movie_path = movie.file_path());
     let _enter = span.enter();
@@ -126,6 +130,7 @@ async fn fetch_movie_data(movie: &mut MovieData, client: &TMDBClient) -> Result<
     }
 }
 
+/// Retrieves and updates the basic metadata for a movie.
 async fn update_movie_basics(movie: &mut MovieData, client: &TMDBClient) -> Result<()> {
     let movie_basics = client
         .get_movie_info(movie.file_title(), movie.file_year().parse::<u32>().ok())
@@ -151,6 +156,7 @@ async fn update_movie_basics(movie: &mut MovieData, client: &TMDBClient) -> Resu
     Ok(())
 }
 
+/// Retrieves and updates the genres for a movie.
 async fn update_movie_genres(movie: &mut MovieData, client: &TMDBClient) -> Result<()> {
     movie.set_genres(
         client
@@ -167,6 +173,7 @@ async fn update_movie_genres(movie: &mut MovieData, client: &TMDBClient) -> Resu
     Ok(())
 }
 
+/// Retrieves and updates the credits for a movie.
 async fn get_movie_credits(movie: &mut MovieData, client: &TMDBClient) -> Result<CreditsMovie> {
     let movie_credits = client
         .fetch_movie_credits(movie.tmdb_id())
@@ -182,6 +189,8 @@ async fn get_movie_credits(movie: &mut MovieData, client: &TMDBClient) -> Result
 // endregion
 
 // region: ---- UPDATE IMAGES ----
+
+/// Downloads movie poster, snapshot and backdrop, updating their file paths.
 async fn update_movie_posters(movie: &mut MovieData, client: &TMDBClient) -> Result<()> {
     let backdrop_path = client.update_movie_backdrop(movie).await?;
     movie.set_backdrop(Some(backdrop_path));
@@ -193,12 +202,14 @@ async fn update_movie_posters(movie: &mut MovieData, client: &TMDBClient) -> Res
     Ok(())
 }
 
+/// Downloads credit profile picture,and set their file paths.
 async fn update_credits_posters(credits: &mut CreditsMovie, client: &TMDBClient) -> Result<()> {
     update_cast_images(credits, client).await?;
     update_crew_images(credits, client).await?;
     Ok(())
 }
 
+/// Downloads cast profile picture,and set their file paths.
 async fn update_cast_images(movie_credits: &mut CreditsMovie, client: &TMDBClient) -> Result<()> {
     let batch_size = 20;
     let casts = movie_credits.credits_cast();
@@ -226,6 +237,7 @@ async fn update_cast_images(movie_credits: &mut CreditsMovie, client: &TMDBClien
     Ok(())
 }
 
+/// Downloads crew profile picture,and set their file paths.
 async fn update_crew_images(movie_credits: &mut CreditsMovie, client: &TMDBClient) -> Result<()> {
     let batch_size = 20;
     let crews = movie_credits.credits_crew();
@@ -255,6 +267,8 @@ async fn update_crew_images(movie_credits: &mut CreditsMovie, client: &TMDBClien
 // endregion
 
 // region: ---- FILTER CREDITS ----
+
+/// Filters movie credits to retain only credited cast members and principal crew.
 fn filter_credits(credits: &mut CreditsMovie) {
     let casts = credits.credits_cast_mut();
     casts.retain(|cast| !cast.character().contains("uncredited"));

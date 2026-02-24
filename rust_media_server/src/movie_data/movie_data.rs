@@ -266,6 +266,7 @@ impl MovieData {
         })
     }
 
+    /// Parses a filename to extract the title, year, and optional metadata, then updates the corresponding movie record.
     fn parse_file_name(name: &str) -> Result<(String, String, String)> {
         let file_title;
         let file_year;
