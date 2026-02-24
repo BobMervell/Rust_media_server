@@ -97,7 +97,7 @@ impl SmbExplorer {
                                 yield Ok(movie);
                             }
                             Err(e) => {
-                                tracing::error!(file_path = file_path, success = false, error = %e, "Movie found but failed");
+                                tracing::error!(file_path = file_path, success = false, error = ?e, "Movie found but failed");
                                 yield Err(e);
                             }
                         }

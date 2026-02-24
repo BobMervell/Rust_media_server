@@ -183,7 +183,15 @@ impl TMDBClient {
                     "Failed to get search response for movie: {} ({:?}), from url: {}",
                     movie_name, movie_year, &url
                 )
+            })?
+            .error_for_status()
+            .with_context(|| {
+                format!(
+                    "TMDB returned error status for movie: {} ({:?}), from url: {}",
+                    movie_name, movie_year, &url
+                )
             })?;
+
         let movie = response
             .json::<MovieSearchResult>()
             .await
@@ -211,12 +219,25 @@ impl TMDBClient {
     pub async fn fetch_movie_genres(&self, tmdb_id: i64) -> Result<MovieGenres> {
         let url = format!("{}/movie/{}?language=en-US", TMDB_BASE_URL, &tmdb_id);
 
-        let response = self.client.get(&url).send().await.with_context(|| {
-            format!(
-                "Failed to get detail response for movie id: {} , from url: {}",
-                tmdb_id, &url
-            )
-        })?;
+        let response = self
+            .client
+            .get(&url)
+            .send()
+            .await
+            .with_context(|| {
+                format!(
+                    "Failed to get detail response for movie id: {} , from url: {}",
+                    tmdb_id, &url
+                )
+            })?
+            .error_for_status()
+            .with_context(|| {
+                format!(
+                    "TMDB returned error status for movie id: {} , from url: {}",
+                    tmdb_id, &url
+                )
+            })?;
+
         let movie_details = response.json::<MovieGenres>().await.with_context(|| {
             format!(
                 "Failed to deserialize detail response for movie id: {}, from url: {}",
@@ -226,19 +247,30 @@ impl TMDBClient {
         Ok(movie_details)
     }
 
-    //TODO return an error if empty (i think it does now but without log)
     pub async fn fetch_movie_credits(&self, tmdb_id: i64) -> Result<CreditsMovie> {
         let url = format!(
             "{}/movie/{}/credits?language=en-US",
             TMDB_BASE_URL, &tmdb_id
         );
 
-        let response = self.client.get(&url).send().await.with_context(|| {
-            format!(
-                "Failed to get credit response for movie id: {} , from url: {}",
-                tmdb_id, &url
-            )
-        })?;
+        let response = self
+            .client
+            .get(&url)
+            .send()
+            .await
+            .with_context(|| {
+                format!(
+                    "Failed to get credit response for movie id: {} , from url: {}",
+                    tmdb_id, &url
+                )
+            })?
+            .error_for_status()
+            .with_context(|| {
+                format!(
+                    "TMDB returned error status for movie id: {} , from url: {}",
+                    tmdb_id, &url
+                )
+            })?;
 
         let credits_details = response.json::<CreditsMovie>().await.with_context(|| {
             format!(
@@ -252,7 +284,6 @@ impl TMDBClient {
 
     // region: ----- GET IMAGES -----
 
-    //TODO change update_images to work with results rather than option
     async fn update_images<T, FGet>(
         &self,
         item: &T,
@@ -343,7 +374,14 @@ impl TMDBClient {
             .get(&url)
             .send()
             .await
-            .with_context(|| format!("Failed to get response for url: {}", &url))?;
+            .with_context(|| format!("Failed to get response for url: {}", &url))?
+            .error_for_status()
+            .with_context(|| {
+                format!(
+                    "TMDB returned error status for image: {} , from url: {}",
+                    picture_path, &url
+                )
+            })?;
 
         if !response.status().is_success() {
             return Err(anyhow!("HTTP error: {}", response.status()));

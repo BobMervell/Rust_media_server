@@ -146,7 +146,7 @@ impl DataSaver {
             Ok(id) => id,
             Err(e) => {
                 tracing::error!(
-                    "Failed to push movie data for {} \n Caused by: {}",
+                    "Failed to push movie data for {} \n Caused by: {:?}",
                     m.file_path(),
                     e
                 );
@@ -157,7 +157,7 @@ impl DataSaver {
         Self::push_genre(movie_id, &m, &tx)
             .map_err(|e| {
                 tracing::error!(
-                    "Failed to push movie genre for {} \n Caused by {}",
+                    "Failed to push movie genre for {} \n Caused by {:?}",
                     m.file_path(),
                     e
                 );
@@ -167,7 +167,7 @@ impl DataSaver {
         Self::push_credits(movie_id, &c, &tx)
             .map_err(|e| {
                 tracing::error!(
-                    "Failed to push movie credits for {} \n Caused by {}",
+                    "Failed to push movie credits for {} \n Caused by {:?}",
                     m.file_path(),
                     e
                 );
@@ -215,7 +215,12 @@ impl DataSaver {
                 (m.file_path(),),
                 |row| row.get::<_, i64>(0),
             )
-            .context("Error getting movie_id from table movie: {}")?;
+            .with_context(|| {
+                format!(
+                    "Error getting last movie_id from table movie for: {}",
+                    m.file_path()
+                )
+            })?;
 
         Ok(movie_id)
     }
