@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 /// Module that orchestrates the media retrieval pipeline.
 use crate::{
     db_interface::data_saver::DataSaver,
@@ -5,9 +7,11 @@ use crate::{
     movie_data::movie_data::{CreditsMovie, MovieData},
     tmdb_client::tmdb_client::TMDBClient,
 };
-use anyhow::{Context, Result};
+use anyhow::{Context, Error, Result};
 use futures::stream::{self, StreamExt};
+use tokio::sync::Mutex;
 use tracing::{debug_span, instrument};
+use trpl::Stream;
 
 /// Runs the primary streaming pipeline for media retrieval.
 ///
@@ -18,45 +22,20 @@ pub async fn retrieve_media() -> Result<()> {
     let smb_explorer: SmbExplorer = tempo_smb_connect()
         .await
         .context("Failed to connect to SMB share")?;
+
     let client = TMDBClient::new().context("Failed to create TMDB client")?;
 
-    let mut movies = Box::pin(smb_explorer.fetch_movies(""));
+    let movies = smb_explorer.fetch_movies("");
 
     tracing::info!("Movie retrieval stream started");
 
-    let mut data_saver = initiate_db().context("Failed to initiate database")?;
+    let data_saver = Arc::new(Mutex::new(
+        initiate_db().context("Failed to initiate database")?,
+    ));
 
-    while let Some(movie) = movies.next().await {
-        match movie {
-            Ok(mut movie) => {
-                let mut credits = fetch_movie_data(&mut movie, &client).await?;
-
-                update_movie_posters(&mut movie, &client)
-                    .await
-                    .map_err(|e| {
-                        tracing::error!(
-                            "Failed to update movie backdrop for {} \n Caused by {:?}",
-                            movie.file_path(),
-                            e
-                        );
-                    })
-                    .ok();
-                tracing::debug!(file_path = &movie.file_path(), "Movie posters downloaded");
-
-                update_credits_posters(&mut credits, &client).await?;
-                tracing::debug!(file_path = &movie.file_path(), "Credits posters downloaded");
-
-                data_saver.push_movie_data(movie, credits)?; //trace inside
-            }
-            Err(e) => {
-                tracing::error!(" Error finding movie, \n Caused by {:?}", e)
-            }
-        }
-    }
+    handle_found_movies(movies, &client, data_saver).await;
 
     tracing::info!("Movie retrieval stream ended");
-
-    //movies.for_each_concurrent(10, fetch_movie_data(movie, &client)); possibke to speed up
     Ok(())
 }
 
@@ -75,12 +54,49 @@ fn initiate_db() -> Result<DataSaver> {
 
 // region: ---- UPDATE MOVIE DATA ----
 
+/// Wrapper for the concurent movie handling pipeline 
+async fn handle_found_movies(
+    movies: impl Stream<Item = Result<MovieData, Error>>,
+    client: &TMDBClient,
+    data_saver: Arc<Mutex<DataSaver>>,
+) {
+    // let movies = Box::pin(movies);
+    movies
+        .for_each_concurrent(10, |movie| {
+            let data_saver = Arc::clone(&data_saver);
+            let client = client;
+            async move {
+                match movie {
+                    Ok(mut movie) => {
+                        let mut credits = fetch_movie_data(&mut movie, &client).await;
+                        update_movie_posters(&mut movie, &client).await;
+                        update_credits_posters(&mut credits, &client, &movie.file_path()).await;
+
+                        let mut ds = data_saver.lock().await;
+                        ds.push_movie_data(&movie, &credits)
+                            .map_err(|e| {
+                                tracing::error!(
+                                    "Failed to push movie data for {} \n Caused by {:?}",
+                                    movie.file_path(),
+                                    e
+                                );
+                            })
+                            .ok();
+                    }
+                    Err(e) => {
+                        tracing::error!(" Error finding movie, \n Caused by {:?}", e)
+                    }
+                }
+            }
+        })
+        .await;
+}
+
 /// Fetches movie metadata, including basic information, genres, and credits.
-async fn fetch_movie_data(movie: &mut MovieData, client: &TMDBClient) -> Result<CreditsMovie> {
+async fn fetch_movie_data(movie: &mut MovieData, client: &TMDBClient) -> CreditsMovie {
     let span = debug_span!("fetch_movie_data", movie_path = movie.file_path());
     let _enter = span.enter();
 
-    //try join possible to speed up
     update_movie_basics(movie, client)
         .await
         .map_err(|e| {
@@ -117,7 +133,7 @@ async fn fetch_movie_data(movie: &mut MovieData, client: &TMDBClient) -> Result<
                 success = true,
                 "Movie credits received"
             );
-            Ok(credits)
+            credits
         }
         Err(e) => {
             tracing::error!(
@@ -125,7 +141,7 @@ async fn fetch_movie_data(movie: &mut MovieData, client: &TMDBClient) -> Result<
                 movie.file_path(),
                 e
             );
-            Ok(CreditsMovie::new())
+            CreditsMovie::new()
         }
     }
 }
@@ -191,22 +207,68 @@ async fn get_movie_credits(movie: &mut MovieData, client: &TMDBClient) -> Result
 // region: ---- UPDATE IMAGES ----
 
 /// Downloads movie poster, snapshot and backdrop, updating their file paths.
-async fn update_movie_posters(movie: &mut MovieData, client: &TMDBClient) -> Result<()> {
-    let backdrop_path = client.update_movie_backdrop(movie).await?;
-    movie.set_backdrop(Some(backdrop_path));
-    let poster_path = client.update_movie_poster(movie).await?;
-    movie.set_poster_large(Some(poster_path));
+async fn update_movie_posters(movie: &mut MovieData, client: &TMDBClient) {
+    match client.update_movie_backdrop(movie).await {
+        Ok(snapshot_path) => {
+            movie.set_backdrop(Some(snapshot_path));
+        }
+        Err(e) => {
+            tracing::error!(
+                "Failed to update movie backdrop for {} \n Casued by {:?}",
+                movie.file_path(),
+                e
+            )
+        }
+    }
 
-    let snapshot_path = client.update_movie_poster_snapshot(movie).await?;
-    movie.set_poster_snapshot(Some(snapshot_path));
-    Ok(())
+    match client.update_movie_poster(movie).await {
+        Ok(snapshot_path) => {
+            movie.set_poster_large(Some(snapshot_path));
+        }
+        Err(e) => {
+            tracing::error!(
+                "Failed to update movie poster for {} \n Caused by {:?}",
+                movie.file_path(),
+                e
+            )
+        }
+    }
+
+    match client.update_movie_poster_snapshot(movie).await {
+        Ok(snapshot_path) => {
+            movie.set_poster_snapshot(Some(snapshot_path));
+        }
+        Err(e) => {
+            tracing::error!(
+                "Failed to update movie snapshot for {} \n Caused by {:?}",
+                movie.file_path(),
+                e
+            )
+        }
+    }
+
+    tracing::debug!(file_path = &movie.file_path(), "Movie posters downloaded")
 }
 
 /// Downloads credit profile picture,and set their file paths.
-async fn update_credits_posters(credits: &mut CreditsMovie, client: &TMDBClient) -> Result<()> {
-    update_cast_images(credits, client).await?;
-    update_crew_images(credits, client).await?;
-    Ok(())
+async fn update_credits_posters(credits: &mut CreditsMovie, client: &TMDBClient, movie_path: &str) {
+    if let Err(e) = update_cast_images(credits, client).await {
+        tracing::error!(
+            "Failed to update cast images for {} \n Caused by {:?}",
+            movie_path,
+            e
+        )
+    }
+
+    if let Err(e) = update_crew_images(credits, client).await {
+        tracing::error!(
+            "Failed to update cast images for: {} \n Caused by {:?}",
+            movie_path,
+            e
+        )
+    }
+
+    tracing::debug!(file_path = movie_path, "Credits posters downloaded");
 }
 
 /// Downloads cast profile picture,and set their file paths.
