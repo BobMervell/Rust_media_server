@@ -100,6 +100,7 @@ impl MovieGenres {
 
 // endregion
 
+/// Represents a client for retrieving movie information from the TMDB API.
 pub struct TMDBClient {
     client: Client,
 }
@@ -132,6 +133,11 @@ impl TMDBClient {
     }
 
     // region: ----- GET MOVIE DATA -----
+
+    /// Returns the TMDB ID of the most popular movie matching the given name and year.
+    ///
+    /// If multiple results match, the one with the highest popularity is selected.
+    /// Returns an error if no suitable match is found or the request fails.
     pub async fn get_movie_info(
         &self,
         movie_name: &str,
@@ -158,6 +164,7 @@ impl TMDBClient {
         }
     }
 
+    /// Fetches movie information from the TMDB API by name and year, returning the result.
     async fn fetch_movie_by_name(
         &self,
         movie_name: &str,
@@ -216,6 +223,7 @@ impl TMDBClient {
         return result_movie;
     }
 
+    /// Fetches movie genres from the TMDB API by tmdbId.
     pub async fn fetch_movie_genres(&self, tmdb_id: i64) -> Result<MovieGenres> {
         let url = format!("{}/movie/{}?language=en-US", TMDB_BASE_URL, &tmdb_id);
 
@@ -247,6 +255,7 @@ impl TMDBClient {
         Ok(movie_details)
     }
 
+    /// Fetches movie credits from the TMDB API by tmdbId.
     pub async fn fetch_movie_credits(&self, tmdb_id: i64) -> Result<CreditsMovie> {
         let url = format!(
             "{}/movie/{}/credits?language=en-US",

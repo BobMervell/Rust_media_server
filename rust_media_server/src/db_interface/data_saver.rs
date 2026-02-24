@@ -14,7 +14,8 @@ impl DataSaver {
         Ok(Self { conn: conn })
     }
 
-    // region: ---- CREATE TABLES ----
+    // region: ---- CREATE TABLES ---
+    /// Helper to an index on the specified column of a SQLite table.
     fn create_index(&self, table: &str, column: &str) -> Result<()> {
         let index_name = format!("idx_{}_{}", table.to_lowercase(), column.to_lowercase());
 
@@ -136,6 +137,7 @@ impl DataSaver {
     // endregion
 
     // region: ---- INSERT DATA ----
+    /// Persists all movie-related data, including basic information, genres, and credits.
     pub fn push_movie_data(&mut self, m: MovieData, c: CreditsMovie) -> Result<()> {
         let tx = self
             .conn

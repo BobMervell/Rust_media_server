@@ -10,6 +10,7 @@ use std::{io, str::FromStr, sync::Arc};
 use trpl::{Stream, StreamExt};
 
 //TODO replace tempo_smb_connect()
+/// Prompts for SMB connection parameters and establishes the SMB connection.
 pub async fn tempo_smb_connect() -> Result<SmbExplorer> {
     let mut path = String::new();
     println!("Enter the samba remote path");
@@ -35,6 +36,7 @@ pub async fn tempo_smb_connect() -> Result<SmbExplorer> {
     SmbExplorer::new(path.to_owned(), username.to_owned(), password.to_owned()).await
 }
 
+/// Represents the state and configuration for exploring an SMB shared directory.
 pub struct SmbExplorer {
     tree: Arc<smb::Tree>,
 }
@@ -58,6 +60,10 @@ impl SmbExplorer {
         Ok(Self { tree: tree })
     }
 
+    /// Recursively explores an SMB path and returns a stream of discovered movies.
+    ///
+    /// Traverses each subfolder, yielding a MovieData object for every video file
+    /// whose file is not inside a featurette folder. The MovieData is constructed from the file name.
     pub fn fetch_movies(&self, path: &str) -> impl Stream<Item = Result<MovieData>> {
         let span = debug_span!("fetch_movies", path = path);
         let _enter = span.enter();
@@ -107,6 +113,7 @@ impl SmbExplorer {
         }
     }
 
+    /// Opens the given SMB file path and returns Ok(directory) if it is a folder, or an error otherwise.
     async fn read_directory(&self, path: &str) -> Result<Arc<Directory>> {
         let access_mask = FileAccessMask::new().with_generic_read(true);
 
@@ -124,6 +131,7 @@ impl SmbExplorer {
     }
 
     // region: ---- PARSE PATHS ----
+    /// Parses a subfolder path into its components.
     fn parse_sub_path(&self, dir_entry: &FileDirectoryInformation, path: &str) -> (bool, String) {
         if dir_entry.file_name == "." || dir_entry.file_name == ".." {
             return (false, "".to_string());
@@ -137,6 +145,7 @@ impl SmbExplorer {
         return (true, sub_path);
     }
 
+    /// Parses a file path into its components.
     fn parse_file_path(&self, file_entry: &FileDirectoryInformation, path: &str) -> String {
         if path.is_empty() {
             return file_entry.file_name.to_string();
