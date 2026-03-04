@@ -1,3 +1,4 @@
+import 'package:fluster_media_center/features/LibraryFilters/screens/library_filters.dart';
 import 'package:flutter/material.dart';
 import 'package:fluster_media_center/src/rust/api/media.dart';
 import 'package:fluster_media_center/src/rust/frb_generated.dart';
@@ -33,7 +34,13 @@ class MyApp extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: CustomScrollView(
-                  slivers: [LibraryHeader(), LibraryView()],
+                  slivers: [
+                    LibraryHeader(),
+                    SliverToBoxAdapter(child: SizedBox(height: 20)),
+                    LibraryFilters(),
+                    SliverToBoxAdapter(child: SizedBox(height: 20)),
+                    LibraryView(),
+                  ],
                 ),
               ),
             ),
@@ -72,7 +79,6 @@ class MediaRetriever extends StatelessWidget {
     );
   }
 }
-
 // TODO create a widget for movie snapshot (button mode)
 //
 //TODO create a gridview with movies
