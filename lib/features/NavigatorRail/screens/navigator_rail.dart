@@ -10,7 +10,7 @@ class NavigatorRail extends StatelessWidget {
       builder: (context, constraints) {
         final maxHeight = constraints.maxHeight;
 
-        final targetHeight = maxHeight / 2;
+        final targetHeight = 2 * maxHeight / 3;
 
         //TODO tune or replace magic number for dock height
         final useFullHeight = maxHeight < 600;

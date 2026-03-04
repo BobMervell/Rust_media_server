@@ -6,11 +6,11 @@ class LibraryView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
+    return SliverGrid.builder(
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 200,
-        mainAxisSpacing: 10,
-        crossAxisSpacing: 10,
+        mainAxisSpacing: 100,
+        crossAxisSpacing: 20,
         childAspectRatio: 1,
       ),
       itemCount: null,

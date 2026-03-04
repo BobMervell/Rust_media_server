@@ -3,6 +3,7 @@ import 'package:fluster_media_center/src/rust/api/media.dart';
 import 'package:fluster_media_center/src/rust/frb_generated.dart';
 import 'package:fluster_media_center/features/NavigatorRail/screens/navigator_rail.dart';
 import 'package:fluster_media_center/features/LibraryView/screens/library_view.dart';
+import 'package:fluster_media_center/features/LibraryHeader/screens/library_header.dart';
 
 Future<void> main() async {
   await RustLib.init();
@@ -27,7 +28,15 @@ class MyApp extends StatelessWidget {
         body: Row(
           children: [
             Expanded(flex: 1, child: NavigatorRail()),
-            Expanded(flex: 4, child: LibraryView()),
+            Expanded(
+              flex: 4,
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: CustomScrollView(
+                  slivers: [LibraryHeader(), LibraryView()],
+                ),
+              ),
+            ),
           ],
         ),
       ),
