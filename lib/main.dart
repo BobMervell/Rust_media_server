@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fluster_media_center/src/rust/api/media.dart';
 import 'package:fluster_media_center/src/rust/frb_generated.dart';
 import 'package:fluster_media_center/features/NavigatorRail/screens/navigator_rail.dart';
+import 'package:fluster_media_center/features/LibraryView/screens/library_view.dart';
 
 Future<void> main() async {
   await RustLib.init();
@@ -26,7 +27,7 @@ class MyApp extends StatelessWidget {
         body: Row(
           children: [
             Expanded(flex: 1, child: NavigatorRail()),
-            Expanded(flex: 4, child: TempoHome()),
+            Expanded(flex: 4, child: LibraryView()),
           ],
         ),
       ),
