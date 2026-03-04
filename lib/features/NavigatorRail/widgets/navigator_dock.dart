@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:fluster_media_center/features/NavigatorRail/widgets/NavigatorTopBar.dart';
-import 'package:fluster_media_center/features/NavigatorRail/widgets/NavigatorMenu.dart';
+import 'package:fluster_media_center/features/NavigatorRail/widgets/navigator_top_bar.dart';
+import 'package:fluster_media_center/features/NavigatorRail/widgets/navigator_menu.dart';
 
 class NavigatorDock extends StatelessWidget {
   const NavigatorDock({super.key});

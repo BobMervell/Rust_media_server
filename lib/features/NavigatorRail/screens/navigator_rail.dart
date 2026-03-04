@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:fluster_media_center/features/NavigatorRail/widgets/NavigatorDock.dart';
+import 'package:fluster_media_center/features/NavigatorRail/widgets/navigator_dock.dart';
 
 class NavigatorRail extends StatelessWidget {
   const NavigatorRail({super.key});

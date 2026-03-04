@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fluster_media_center/src/rust/api/media.dart';
 import 'package:fluster_media_center/src/rust/frb_generated.dart';
-import 'package:fluster_media_center/features/NavigatorRail/screens/NavigatorRail.dart';
+import 'package:fluster_media_center/features/NavigatorRail/screens/navigator_rail.dart';
 
 Future<void> main() async {
   await RustLib.init();
