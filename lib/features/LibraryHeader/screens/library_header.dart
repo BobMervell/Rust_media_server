@@ -11,7 +11,7 @@ class LibraryHeader extends StatelessWidget {
         height: 500,
         decoration: BoxDecoration(
           color: Color.fromARGB(255, 200, 220, 220),
-          borderRadius: BorderRadius.all(Radius.circular(20)),
+          borderRadius: BorderRadius.all(Radius.circular(12)),
         ),
         child: PlaceholderBanner(),
       ),

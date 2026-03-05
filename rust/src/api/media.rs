@@ -26,6 +26,7 @@ fn init_tracing_subscriber() {
 #[flutter_rust_bridge::frb]
 pub async fn start(path: &str, username: &str, password: &str, token: &str) -> String {
     let res = retrieve_media(path, username, password, token).await;
+    tracing::info!("Hello, {:?}!", res);
     format!("Hello, {:?}!", res)
 }
 
