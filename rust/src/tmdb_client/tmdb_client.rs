@@ -106,8 +106,7 @@ pub struct TMDBClient {
 }
 
 impl TMDBClient {
-    pub fn new(token:&str) -> Result<Self> {
-
+    pub fn new(token: &str) -> Result<Self> {
         let mut headers = HeaderMap::new();
         headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
         //TODO WARNING HeaderValue::from_str is intended to be replaced in the future by a TryFrom.

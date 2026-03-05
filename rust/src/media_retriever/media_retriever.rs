@@ -18,7 +18,7 @@ use trpl::Stream;
 /// Discovers media paths, fetches movie metadata, credits, and posters from TMDB,
 /// then persists the collected data and associated poster assets in order.
 #[instrument(skip_all)]
-pub async fn retrieve_media(path: &str, username: &str, password: &str, token:&str) -> Result<()> {
+pub async fn retrieve_media(path: &str, username: &str, password: &str, token: &str) -> Result<()> {
     let smb_explorer: SmbExplorer =
         SmbExplorer::new(path.to_owned(), username.to_owned(), password.to_owned())
             .await

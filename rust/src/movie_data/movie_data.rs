@@ -183,6 +183,38 @@ impl Crew {
 }
 // endregion
 
+// region: ---- SNAPSHOT ----
+#[derive(Debug, Clone)]
+pub struct MovieSnapshot {
+    pub tmdb_id: i64,
+    pub file_path: String,
+    pub title: String,
+    pub rating: f32,
+    pub release_date: String,
+    pub poster_snapshot: String,
+}
+
+impl MovieSnapshot {
+    pub fn new(
+        tmdb_id: i64,
+        file_path: String,
+        title: String,
+        rating: f32,
+        release_date: String,
+        poster_snapshot: String,
+    ) -> Self {
+        Self {
+            tmdb_id,
+            file_path,
+            title,
+            rating,
+            release_date,
+            poster_snapshot,
+        }
+    }
+}
+// endregion
+
 #[derive(Debug, Clone)]
 pub struct MovieData {
     id: i64,

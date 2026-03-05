@@ -1,6 +1,5 @@
 import 'package:fluster_media_center/features/LibraryFilters/screens/library_filters.dart';
 import 'package:flutter/material.dart';
-import 'package:fluster_media_center/src/rust/api/media.dart';
 import 'package:fluster_media_center/src/rust/frb_generated.dart';
 import 'package:fluster_media_center/features/NavigatorRail/screens/navigator_rail.dart';
 import 'package:fluster_media_center/features/LibraryView/screens/library_view.dart';
@@ -51,34 +50,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class TempoHome extends StatelessWidget {
-  const TempoHome({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(child: Text("how r u"));
-  }
-}
-
-class MediaRetriever extends StatelessWidget {
-  const MediaRetriever({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<String>(
-      future: start(path: "", username: "", password: "", token: ""),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const CircularProgressIndicator();
-        } else if (snapshot.hasError) {
-          return Text('Error: ${snapshot.error}');
-        } else {
-          return Text('Action: Call Rust `start()`\nResult: ${snapshot.data}');
-        }
-      },
-    );
-  }
-}
 // TODO create a widget for movie snapshot (button mode)
 //
 //TODO create a gridview with movies
