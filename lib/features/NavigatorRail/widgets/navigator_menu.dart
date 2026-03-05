@@ -13,9 +13,9 @@ class NavigatorMenu extends StatelessWidget {
         children: [
           //TODO add movie series and collection menu switch
           ElevatedButton(onPressed: null, child: Text("Movies")),
-          SizedBox(height: 10),
+          SizedBox(height: 12),
           ElevatedButton(onPressed: null, child: Text("Series")),
-          SizedBox(height: 10),
+          SizedBox(height: 12),
           ElevatedButton(onPressed: null, child: Text("Collections")),
         ],
       ),

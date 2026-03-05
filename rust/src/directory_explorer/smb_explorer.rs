@@ -1,5 +1,5 @@
 use crate::movie_data::movie_data::MovieData;
-use anyhow::{Context, Result, anyhow};
+use anyhow::{anyhow, Context, Result};
 use async_stream::stream;
 use smb::{
     Client, ClientConfig, Directory, FileAccessMask, FileDirectoryInformation, Resource, UncPath,

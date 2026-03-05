@@ -15,7 +15,7 @@ class LibraryFilters extends StatelessWidget {
           scrollDirection: Axis.horizontal,
           child: Wrap(
             direction: Axis.horizontal,
-            spacing: 20,
+            spacing: 24,
             children: [
               ItemSnapshot(name: "Order by", width: width, height: height),
               ItemSnapshot(name: "Actors", width: width, height: height),
