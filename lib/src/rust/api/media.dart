@@ -4,6 +4,7 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../frb_generated.dart';
+import '../movie_data/movie_data.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These functions are ignored because they are not marked as `pub`: `init_tracing_subscriber`
@@ -19,3 +20,6 @@ Future<String> start({
   password: password,
   token: token,
 );
+
+Future<List<MovieSnapshot>> getMedia({required String mediaType}) =>
+    RustLib.instance.api.crateApiMediaGetMedia(mediaType: mediaType);

@@ -1,11 +1,9 @@
-use crate::media_retriever::media_retriever::retrieve_media;
+pub use crate::movie_data::movie_data::MovieSnapshot; //expose for dart
+use crate::{
+    db_interface::data_getter::DataGetter, media_retriever::media_retriever::retrieve_media,
+};
+use anyhow::Result;
 use tracing_subscriber::fmt::format::FmtSpan;
-
-#[flutter_rust_bridge::frb]
-pub async fn start(path: &str, username: &str, password: &str, token:&str ) -> String {
-    let res = retrieve_media(path, username, password, token).await;
-    format!("Hello, {:?}!", res)
-}
 
 #[flutter_rust_bridge::frb(init)]
 pub fn init_app() {
@@ -23,4 +21,17 @@ fn init_tracing_subscriber() {
         .init();
 
     tracing_log::LogTracer::init().ok();
+}
+
+#[flutter_rust_bridge::frb]
+pub async fn start(path: &str, username: &str, password: &str, token: &str) -> String {
+    let res = retrieve_media(path, username, password, token).await;
+    tracing::info!("Hello, {:?}!", res);
+    format!("Hello, {:?}!", res)
+}
+
+#[flutter_rust_bridge::frb]
+pub fn get_media(media_type: &str) -> Result<Vec<MovieSnapshot>> {
+    let data_getter = DataGetter::new("movie_db.db".to_owned())?;
+    return data_getter.get_media_snapshot(media_type);
 }

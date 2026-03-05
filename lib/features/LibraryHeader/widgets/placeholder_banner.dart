@@ -5,6 +5,11 @@ class PlaceholderBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(child: Text("Have a nice time here"));
+    return Center(
+      child: ElevatedButton(
+        onPressed: null,
+        child: Text("Have a nice time here"),
+      ),
+    );
   }
 }

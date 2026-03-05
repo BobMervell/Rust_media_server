@@ -11,8 +11,8 @@ class NavigatorDock extends StatelessWidget {
       decoration: BoxDecoration(
         color: Color.fromARGB(255, 180, 200, 200),
         borderRadius: BorderRadius.only(
-          topRight: Radius.circular(20),
-          bottomRight: Radius.circular(20),
+          topRight: Radius.circular(12),
+          bottomRight: Radius.circular(12),
         ),
       ),
       child: Column(
