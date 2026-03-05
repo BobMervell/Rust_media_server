@@ -33,19 +33,19 @@ class _LibraryViewState extends State<LibraryView> {
 
   @override
   Widget build(BuildContext context) {
+    double width = MediaQuery.of(context).size.width / 6;
+
     return SliverGrid.builder(
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 200,
-        mainAxisSpacing: 100,
-        crossAxisSpacing: 20,
-        childAspectRatio: 1,
+      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: width,
+        mainAxisSpacing: 64,
+        crossAxisSpacing: 24,
+        childAspectRatio: 2 / 3,
       ),
       itemCount: medias.length,
       itemBuilder: (BuildContext context, int index) {
         final media = medias[index];
-        return ItemSnapshot(
-          name: media.title,
-        ); // utilisation des vraies données
+        return ItemSnapshot(media: media); // utilisation des vraies données
       },
     );
   }

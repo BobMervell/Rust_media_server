@@ -1,4 +1,3 @@
-import 'package:fluster_media_center/src/rust/api/media.dart';
 import 'package:flutter/material.dart';
 
 class PlaceholderBanner extends StatelessWidget {
@@ -8,9 +7,7 @@ class PlaceholderBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: ElevatedButton(
-        onPressed: () {
-          getMedia(mediaType: "movie");
-        },
+        onPressed: null,
         child: Text("Have a nice time here"),
       ),
     );

@@ -16,7 +16,10 @@ impl DataGetter {
     //TODO add filters
     pub fn get_media_snapshot(&self, media_type: &str) -> Result<Vec<MovieSnapshot>> {
         let query_str = format!(
-            "SELECT tmdb_id, file_path, title, vote_average AS rating, release_date, poster_snapshot FROM {}",media_type);
+            "SELECT tmdb_id, file_path, title, vote_average AS rating, release_date, poster_snapshot
+             FROM {}
+             ORDER BY title COLLATE NOCASE ",
+             media_type);
 
         let mut stmt = self
             .conn
