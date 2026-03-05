@@ -1,7 +1,6 @@
+use crate::movie_data::movie_data::{CreditsMovie, MovieData};
 use anyhow::{Context, Result};
 use rusqlite::{Connection, Transaction};
-
-use crate::movie_data::movie_data::{CreditsMovie, MovieData};
 
 pub struct DataSaver {
     conn: Connection,
