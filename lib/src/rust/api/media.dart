@@ -23,3 +23,12 @@ Future<String> start({
 
 Future<List<MovieSnapshot>> getMedia({required String mediaType}) =>
     RustLib.instance.api.crateApiMediaGetMedia(mediaType: mediaType);
+
+Future<void> tempoMountSmb() =>
+    RustLib.instance.api.crateApiMediaTempoMountSmb();
+
+Future<void> tempoUnmountSmb() =>
+    RustLib.instance.api.crateApiMediaTempoUnmountSmb();
+
+Future<void> openVideo({required String path}) =>
+    RustLib.instance.api.crateApiMediaOpenVideo(path: path);
