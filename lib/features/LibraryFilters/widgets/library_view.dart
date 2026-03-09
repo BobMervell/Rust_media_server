@@ -1,4 +1,4 @@
-import 'package:fluster_media_center/features/LibraryView/widgets/item_snapshot.dart';
+import 'package:fluster_media_center/features/LibraryFilters/widgets/media_snapshot.dart';
 import 'package:fluster_media_center/src/rust/api/media.dart';
 import 'package:fluster_media_center/src/rust/movie_data/movie_data.dart';
 import 'package:flutter/material.dart';
@@ -45,7 +45,7 @@ class _LibraryViewState extends State<LibraryView> {
       itemCount: medias.length,
       itemBuilder: (BuildContext context, int index) {
         final media = medias[index];
-        return ItemSnapshot(media: media); // utilisation des vraies données
+        return MediaSnapshot(media: media); // utilisation des vraies données
       },
     );
   }

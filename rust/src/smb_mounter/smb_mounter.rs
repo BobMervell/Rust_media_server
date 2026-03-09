@@ -23,7 +23,6 @@ pub fn mount_smb(
             .arg(format!("username={},password={}", user, password))
             .status()
             .map(|_| ())?;
-
         return Ok(());
     }
     return Err(anyhow!("Target os not supported: "));
