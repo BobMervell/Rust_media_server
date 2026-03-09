@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:fluster_media_center/features/VideoPlayer/screens/video_player.dart';
+import 'package:fluster_media_center/src/rust/api/media.dart';
 import 'package:fluster_media_center/src/rust/movie_data/movie_data.dart';
 import 'package:flutter/material.dart';
 
@@ -11,9 +13,24 @@ class ItemSnapshot extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: null,
-      onDoubleTap: () {
-        print("double click ${media.title}");
+      onDoubleTap: () async {
+        print("double click ${media.filePath}");
+
+        String encodedPath = Uri.encodeComponent(media.filePath);
+        String realPath = "/mnt/smb/fluster/${media.filePath}";
+
+        await tempoMountSmb();
+
+        //TODO (test) integrated player)
+
+        // Navigator.push(
+        //   context,
+        //   MaterialPageRoute(builder: (context) => SecondPage(path: realPath)),
+        // );
+
+        openVideo(path: realPath);
       },
+
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -24,9 +41,9 @@ class ItemSnapshot extends StatelessWidget {
                 red: 0,
                 blue: 0,
                 green: 0,
-              ), // couleur de l'ombre
-              blurRadius: 4, // flou
-              offset: Offset(4, 8), // décalage horizontal et vertical
+              ),
+              blurRadius: 4,
+              offset: Offset(4, 8),
             ),
           ],
         ),
