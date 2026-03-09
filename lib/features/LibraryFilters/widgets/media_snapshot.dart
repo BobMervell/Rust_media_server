@@ -1,13 +1,12 @@
 import 'dart:io';
-import 'package:fluster_media_center/features/VideoPlayer/screens/video_player.dart';
 import 'package:fluster_media_center/src/rust/api/media.dart';
 import 'package:fluster_media_center/src/rust/movie_data/movie_data.dart';
 import 'package:flutter/material.dart';
 
-class ItemSnapshot extends StatelessWidget {
+class MediaSnapshot extends StatelessWidget {
   final MovieSnapshot media;
 
-  const ItemSnapshot({super.key, required this.media});
+  const MediaSnapshot({super.key, required this.media});
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +15,6 @@ class ItemSnapshot extends StatelessWidget {
       onDoubleTap: () async {
         print("double click ${media.filePath}");
 
-        String encodedPath = Uri.encodeComponent(media.filePath);
         String realPath = "/mnt/smb/fluster/${media.filePath}";
 
         await tempoMountSmb();
