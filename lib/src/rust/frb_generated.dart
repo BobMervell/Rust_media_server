@@ -67,7 +67,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.11.1';
 
   @override
-  int get rustContentHash => -1943726258;
+  int get rustContentHash => -1020694944;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -84,12 +84,18 @@ abstract class RustLibApi extends BaseApi {
 
   Future<void> crateApiMediaInitApp();
 
+  Future<void> crateApiMediaOpenVideo({required String path});
+
   Future<String> crateApiMediaStart({
     required String path,
     required String username,
     required String password,
     required String token,
   });
+
+  Future<void> crateApiMediaTempoMountSmb();
+
+  Future<void> crateApiMediaTempoUnmountSmb();
 }
 
 class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
@@ -158,6 +164,34 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "init_app", argNames: []);
 
   @override
+  Future<void> crateApiMediaOpenVideo({required String path}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(path, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 3,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta: kCrateApiMediaOpenVideoConstMeta,
+        argValues: [path],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiMediaOpenVideoConstMeta =>
+      const TaskConstMeta(debugName: "open_video", argNames: ["path"]);
+
+  @override
   Future<String> crateApiMediaStart({
     required String path,
     required String username,
@@ -175,7 +209,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 3,
+            funcId: 4,
             port: port_,
           );
         },
@@ -194,6 +228,60 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     debugName: "start",
     argNames: ["path", "username", "password", "token"],
   );
+
+  @override
+  Future<void> crateApiMediaTempoMountSmb() {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 5,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta: kCrateApiMediaTempoMountSmbConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiMediaTempoMountSmbConstMeta =>
+      const TaskConstMeta(debugName: "tempo_mount_smb", argNames: []);
+
+  @override
+  Future<void> crateApiMediaTempoUnmountSmb() {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 6,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta: kCrateApiMediaTempoUnmountSmbConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiMediaTempoUnmountSmbConstMeta =>
+      const TaskConstMeta(debugName: "tempo_unmount_smb", argNames: []);
 
   @protected
   AnyhowException dco_decode_AnyhowException(dynamic raw) {

@@ -4,9 +4,11 @@ import 'package:fluster_media_center/src/rust/frb_generated.dart';
 import 'package:fluster_media_center/features/NavigatorRail/screens/navigator_rail.dart';
 import 'package:fluster_media_center/features/LibraryView/screens/library_view.dart';
 import 'package:fluster_media_center/features/LibraryHeader/screens/library_header.dart';
+import 'package:media_kit/media_kit.dart';
 
 Future<void> main() async {
   await RustLib.init();
+  MediaKit.ensureInitialized(); // Necessary initialization for package:media_kit.
   runApp(const MyApp());
 }
 
@@ -49,13 +51,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-// TODO create a widget for movie snapshot (button mode)
-//
-//TODO create a gridview with movies
-//
-//TODO create detailed movie template
-//
-//TODO create filters row
-
-//TODO first version finished init ?
