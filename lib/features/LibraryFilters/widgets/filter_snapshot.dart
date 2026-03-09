@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-class ItemSnapshot extends StatelessWidget {
+class FilterSnapshot extends StatelessWidget {
   final String name;
   final double width;
   final double height;
 
-  const ItemSnapshot({
+  const FilterSnapshot({
     super.key,
     required this.name,
     required this.width,
