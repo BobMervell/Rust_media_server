@@ -1,4 +1,4 @@
-import 'package:fluster_media_center/features/LibraryFilters/widgets/filter_snapshot.dart';
+import 'package:fluster_media_center/features/LibraryViewer/widgets/filter_snapshot.dart';
 import 'package:flutter/material.dart';
 
 class LibraryFilters extends StatelessWidget {
