@@ -1,4 +1,4 @@
-import 'package:fluster_media_center/features/LibraryFilters/screens/library.dart';
+import 'package:fluster_media_center/features/LibraryViewer/screens/library.dart';
 import 'package:flutter/material.dart';
 import 'package:fluster_media_center/src/rust/frb_generated.dart';
 import 'package:fluster_media_center/features/NavigatorRail/screens/navigator_rail.dart';

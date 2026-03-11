@@ -1,4 +1,4 @@
-import 'package:fluster_media_center/features/LibraryFilters/widgets/placeholder_banner.dart';
+import 'package:fluster_media_center/features/LibraryViewer/widgets/placeholder_banner.dart';
 import 'package:flutter/material.dart';
 
 class LibraryHeader extends StatelessWidget {
