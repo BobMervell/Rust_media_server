@@ -22,7 +22,7 @@ class _LibraryViewState extends State<LibraryView> {
 
   void loadMedias() async {
     try {
-      final result = await getMedia(mediaType: "movie");
+      final result = await getMediaSnapshots(mediaType: "movie");
       setState(() {
         medias = result;
       });
