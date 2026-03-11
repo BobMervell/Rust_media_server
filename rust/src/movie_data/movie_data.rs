@@ -151,8 +151,8 @@ impl fmt::Display for Crew {
              Tmdb_id:             {}\n\
              Name:                {}\n\
              Picture path:        {:?}\n\
-             Character:           {}\n\
-             Order:               {}",
+             department:           {}\n\
+             job:               {}",
             self.id, self.tmdb_id, self.name, self.picture_path, self.department, self.job
         )
     }
@@ -186,7 +186,7 @@ impl Crew {
 // region: ---- SNAPSHOT ----
 #[derive(Debug, Clone)]
 pub struct MovieSnapshot {
-    pub tmdb_id: i64,
+    pub id: i64,
     pub file_path: String,
     pub title: String,
     pub rating: f32,
@@ -196,7 +196,7 @@ pub struct MovieSnapshot {
 
 impl MovieSnapshot {
     pub fn new(
-        tmdb_id: i64,
+        id: i64,
         file_path: String,
         title: String,
         rating: f32,
@@ -204,12 +204,85 @@ impl MovieSnapshot {
         poster_snapshot: String,
     ) -> Self {
         Self {
-            tmdb_id,
+            id,
             file_path,
             title,
             rating,
             release_date,
             poster_snapshot,
+        }
+    }
+}
+// endregion
+
+// region: ---- MediaData ----
+#[derive(Debug, Clone)]
+pub struct MediaData {
+    pub id: i64,
+    pub file_path: String,
+    pub file_optional_info: String,
+    pub original_title: String,
+    pub title: String,
+    pub rating: f32,
+    pub release_date: String,
+    pub summary: String,
+    pub poster_large: String,
+    pub backdrop: String,
+}
+
+impl MediaData {
+    pub fn new(
+        id: i64,
+        file_path: String,
+        file_optional_info: String,
+        original_title: String,
+        title: String,
+        rating: f32,
+        release_date: String,
+        summary: String,
+        poster_large: String,
+        backdrop: String,
+    ) -> Self {
+        Self {
+            id,
+            file_path,
+            file_optional_info,
+            original_title,
+            title,
+            rating,
+            release_date,
+            summary,
+            poster_large,
+            backdrop,
+        }
+    }
+}
+// endregion
+
+// region: ---- PersonData ----
+#[derive(Debug, Clone)]
+pub struct PersonData {
+    pub tmdb_id: i64,
+    pub name: String,
+    pub character: String,
+    pub job_name: String,
+    pub picture_path: String,
+}
+
+impl PersonData {
+    pub fn new(
+        tmdb_id: i64,
+        name: String,
+        character: String,
+        job_name: String,
+        picture_path: String,
+    ) -> Self {
+        Self {
+            tmdb_id,
+            name,
+            character,
+            job_name,
+            picture_path,
         }
     }
 }

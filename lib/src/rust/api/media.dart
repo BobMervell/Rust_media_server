@@ -21,8 +21,17 @@ Future<String> start({
   token: token,
 );
 
-Future<List<MovieSnapshot>> getMedia({required String mediaType}) =>
-    RustLib.instance.api.crateApiMediaGetMedia(mediaType: mediaType);
+Future<List<MovieSnapshot>> getMediaSnapshots({required String mediaType}) =>
+    RustLib.instance.api.crateApiMediaGetMediaSnapshots(mediaType: mediaType);
+
+Future<MediaData> getMedia({required PlatformInt64 mediaId}) =>
+    RustLib.instance.api.crateApiMediaGetMedia(mediaId: mediaId);
+
+Future<List<PersonData>> getMediaCast({required PlatformInt64 mediaId}) =>
+    RustLib.instance.api.crateApiMediaGetMediaCast(mediaId: mediaId);
+
+Future<List<PersonData>> getMediaCrew({required PlatformInt64 mediaId}) =>
+    RustLib.instance.api.crateApiMediaGetMediaCrew(mediaId: mediaId);
 
 Future<void> tempoMountSmb() =>
     RustLib.instance.api.crateApiMediaTempoMountSmb();
