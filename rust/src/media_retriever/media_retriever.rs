@@ -337,7 +337,7 @@ fn filter_credits(credits: &mut CreditsMovie) {
     casts.retain(|cast| !cast.character().contains("uncredited"));
 
     let crew = credits.credits_crew_mut();
-    crew.retain(|crew| !match crew.department() {
+    crew.retain(|crew| match crew.department() {
         "Directing" => is_important_directing(crew.job()),
         "Production" => is_important_production(crew.job()),
         "Camera" => is_important_camera(crew.job()),
