@@ -67,7 +67,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.11.1';
 
   @override
-  int get rustContentHash => -1020694944;
+  int get rustContentHash => 890826887;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -78,7 +78,17 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
 }
 
 abstract class RustLibApi extends BaseApi {
-  Future<List<MovieSnapshot>> crateApiMediaGetMedia({
+  Future<MediaData> crateApiMediaGetMedia({required PlatformInt64 mediaId});
+
+  Future<List<PersonData>> crateApiMediaGetMediaCast({
+    required PlatformInt64 mediaId,
+  });
+
+  Future<List<PersonData>> crateApiMediaGetMediaCrew({
+    required PlatformInt64 mediaId,
+  });
+
+  Future<List<MovieSnapshot>> crateApiMediaGetMediaSnapshots({
     required String mediaType,
   });
 
@@ -107,7 +117,95 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   });
 
   @override
-  Future<List<MovieSnapshot>> crateApiMediaGetMedia({
+  Future<MediaData> crateApiMediaGetMedia({required PlatformInt64 mediaId}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_i_64(mediaId, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 1,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_media_data,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta: kCrateApiMediaGetMediaConstMeta,
+        argValues: [mediaId],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiMediaGetMediaConstMeta =>
+      const TaskConstMeta(debugName: "get_media", argNames: ["mediaId"]);
+
+  @override
+  Future<List<PersonData>> crateApiMediaGetMediaCast({
+    required PlatformInt64 mediaId,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_i_64(mediaId, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 2,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_person_data,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta: kCrateApiMediaGetMediaCastConstMeta,
+        argValues: [mediaId],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiMediaGetMediaCastConstMeta =>
+      const TaskConstMeta(debugName: "get_media_cast", argNames: ["mediaId"]);
+
+  @override
+  Future<List<PersonData>> crateApiMediaGetMediaCrew({
+    required PlatformInt64 mediaId,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_i_64(mediaId, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 3,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_person_data,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta: kCrateApiMediaGetMediaCrewConstMeta,
+        argValues: [mediaId],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiMediaGetMediaCrewConstMeta =>
+      const TaskConstMeta(debugName: "get_media_crew", argNames: ["mediaId"]);
+
+  @override
+  Future<List<MovieSnapshot>> crateApiMediaGetMediaSnapshots({
     required String mediaType,
   }) {
     return handler.executeNormal(
@@ -118,7 +216,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 1,
+            funcId: 4,
             port: port_,
           );
         },
@@ -126,15 +224,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_list_movie_snapshot,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiMediaGetMediaConstMeta,
+        constMeta: kCrateApiMediaGetMediaSnapshotsConstMeta,
         argValues: [mediaType],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiMediaGetMediaConstMeta =>
-      const TaskConstMeta(debugName: "get_media", argNames: ["mediaType"]);
+  TaskConstMeta get kCrateApiMediaGetMediaSnapshotsConstMeta =>
+      const TaskConstMeta(
+        debugName: "get_media_snapshots",
+        argNames: ["mediaType"],
+      );
 
   @override
   Future<void> crateApiMediaInitApp() {
@@ -145,7 +246,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 2,
+            funcId: 5,
             port: port_,
           );
         },
@@ -173,7 +274,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 3,
+            funcId: 6,
             port: port_,
           );
         },
@@ -209,7 +310,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 4,
+            funcId: 7,
             port: port_,
           );
         },
@@ -238,7 +339,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 5,
+            funcId: 8,
             port: port_,
           );
         },
@@ -265,7 +366,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 6,
+            funcId: 9,
             port: port_,
           );
         },
@@ -314,9 +415,35 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<PersonData> dco_decode_list_person_data(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_person_data).toList();
+  }
+
+  @protected
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as Uint8List;
+  }
+
+  @protected
+  MediaData dco_decode_media_data(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 10)
+      throw Exception('unexpected arr length: expect 10 but see ${arr.length}');
+    return MediaData(
+      id: dco_decode_i_64(arr[0]),
+      filePath: dco_decode_String(arr[1]),
+      fileOptionalInfo: dco_decode_String(arr[2]),
+      originalTitle: dco_decode_String(arr[3]),
+      title: dco_decode_String(arr[4]),
+      rating: dco_decode_f_32(arr[5]),
+      releaseDate: dco_decode_String(arr[6]),
+      summary: dco_decode_String(arr[7]),
+      posterLarge: dco_decode_String(arr[8]),
+      backdrop: dco_decode_String(arr[9]),
+    );
   }
 
   @protected
@@ -326,12 +453,27 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     if (arr.length != 6)
       throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
     return MovieSnapshot(
-      tmdbId: dco_decode_i_64(arr[0]),
+      id: dco_decode_i_64(arr[0]),
       filePath: dco_decode_String(arr[1]),
       title: dco_decode_String(arr[2]),
       rating: dco_decode_f_32(arr[3]),
       releaseDate: dco_decode_String(arr[4]),
       posterSnapshot: dco_decode_String(arr[5]),
+    );
+  }
+
+  @protected
+  PersonData dco_decode_person_data(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
+    return PersonData(
+      tmdbId: dco_decode_i_64(arr[0]),
+      name: dco_decode_String(arr[1]),
+      character: dco_decode_String(arr[2]),
+      jobName: dco_decode_String(arr[3]),
+      picturePath: dco_decode_String(arr[4]),
     );
   }
 
@@ -388,6 +530,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<PersonData> sse_decode_list_person_data(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <PersonData>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_person_data(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var len_ = sse_decode_i_32(deserializer);
@@ -395,21 +549,65 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  MediaData sse_decode_media_data(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_id = sse_decode_i_64(deserializer);
+    var var_filePath = sse_decode_String(deserializer);
+    var var_fileOptionalInfo = sse_decode_String(deserializer);
+    var var_originalTitle = sse_decode_String(deserializer);
+    var var_title = sse_decode_String(deserializer);
+    var var_rating = sse_decode_f_32(deserializer);
+    var var_releaseDate = sse_decode_String(deserializer);
+    var var_summary = sse_decode_String(deserializer);
+    var var_posterLarge = sse_decode_String(deserializer);
+    var var_backdrop = sse_decode_String(deserializer);
+    return MediaData(
+      id: var_id,
+      filePath: var_filePath,
+      fileOptionalInfo: var_fileOptionalInfo,
+      originalTitle: var_originalTitle,
+      title: var_title,
+      rating: var_rating,
+      releaseDate: var_releaseDate,
+      summary: var_summary,
+      posterLarge: var_posterLarge,
+      backdrop: var_backdrop,
+    );
+  }
+
+  @protected
   MovieSnapshot sse_decode_movie_snapshot(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    var var_tmdbId = sse_decode_i_64(deserializer);
+    var var_id = sse_decode_i_64(deserializer);
     var var_filePath = sse_decode_String(deserializer);
     var var_title = sse_decode_String(deserializer);
     var var_rating = sse_decode_f_32(deserializer);
     var var_releaseDate = sse_decode_String(deserializer);
     var var_posterSnapshot = sse_decode_String(deserializer);
     return MovieSnapshot(
-      tmdbId: var_tmdbId,
+      id: var_id,
       filePath: var_filePath,
       title: var_title,
       rating: var_rating,
       releaseDate: var_releaseDate,
       posterSnapshot: var_posterSnapshot,
+    );
+  }
+
+  @protected
+  PersonData sse_decode_person_data(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_tmdbId = sse_decode_i_64(deserializer);
+    var var_name = sse_decode_String(deserializer);
+    var var_character = sse_decode_String(deserializer);
+    var var_jobName = sse_decode_String(deserializer);
+    var var_picturePath = sse_decode_String(deserializer);
+    return PersonData(
+      tmdbId: var_tmdbId,
+      name: var_name,
+      character: var_character,
+      jobName: var_jobName,
+      picturePath: var_picturePath,
     );
   }
 
@@ -476,6 +674,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_list_person_data(
+    List<PersonData> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_person_data(item, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_list_prim_u_8_strict(
     Uint8List self,
     SseSerializer serializer,
@@ -486,14 +696,39 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_media_data(MediaData self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_64(self.id, serializer);
+    sse_encode_String(self.filePath, serializer);
+    sse_encode_String(self.fileOptionalInfo, serializer);
+    sse_encode_String(self.originalTitle, serializer);
+    sse_encode_String(self.title, serializer);
+    sse_encode_f_32(self.rating, serializer);
+    sse_encode_String(self.releaseDate, serializer);
+    sse_encode_String(self.summary, serializer);
+    sse_encode_String(self.posterLarge, serializer);
+    sse_encode_String(self.backdrop, serializer);
+  }
+
+  @protected
   void sse_encode_movie_snapshot(MovieSnapshot self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_i_64(self.tmdbId, serializer);
+    sse_encode_i_64(self.id, serializer);
     sse_encode_String(self.filePath, serializer);
     sse_encode_String(self.title, serializer);
     sse_encode_f_32(self.rating, serializer);
     sse_encode_String(self.releaseDate, serializer);
     sse_encode_String(self.posterSnapshot, serializer);
+  }
+
+  @protected
+  void sse_encode_person_data(PersonData self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_64(self.tmdbId, serializer);
+    sse_encode_String(self.name, serializer);
+    sse_encode_String(self.character, serializer);
+    sse_encode_String(self.jobName, serializer);
+    sse_encode_String(self.picturePath, serializer);
   }
 
   @protected
