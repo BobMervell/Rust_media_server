@@ -37,10 +37,19 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<MovieSnapshot> dco_decode_list_movie_snapshot(dynamic raw);
 
   @protected
+  List<PersonData> dco_decode_list_person_data(dynamic raw);
+
+  @protected
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
 
   @protected
+  MediaData dco_decode_media_data(dynamic raw);
+
+  @protected
   MovieSnapshot dco_decode_movie_snapshot(dynamic raw);
+
+  @protected
+  PersonData dco_decode_person_data(dynamic raw);
 
   @protected
   int dco_decode_u_8(dynamic raw);
@@ -66,10 +75,19 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  List<PersonData> sse_decode_list_person_data(SseDeserializer deserializer);
+
+  @protected
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
 
   @protected
+  MediaData sse_decode_media_data(SseDeserializer deserializer);
+
+  @protected
   MovieSnapshot sse_decode_movie_snapshot(SseDeserializer deserializer);
+
+  @protected
+  PersonData sse_decode_person_data(SseDeserializer deserializer);
 
   @protected
   int sse_decode_u_8(SseDeserializer deserializer);
@@ -105,13 +123,25 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_list_person_data(
+    List<PersonData> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_prim_u_8_strict(
     Uint8List self,
     SseSerializer serializer,
   );
 
   @protected
+  void sse_encode_media_data(MediaData self, SseSerializer serializer);
+
+  @protected
   void sse_encode_movie_snapshot(MovieSnapshot self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_person_data(PersonData self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_8(int self, SseSerializer serializer);

@@ -37,7 +37,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.11.1";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1020694944;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 890826887;
 
 // Section: executor
 
@@ -67,12 +67,117 @@ fn wire__crate__api__media__get_media_impl(
             };
             let mut deserializer =
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_media_id = <i64>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
+                    (move || {
+                        let output_ok = crate::api::media::get_media(api_media_id)?;
+                        Ok(output_ok)
+                    })(),
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__media__get_media_cast_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "get_media_cast",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_media_id = <i64>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
+                    (move || {
+                        let output_ok = crate::api::media::get_media_cast(api_media_id)?;
+                        Ok(output_ok)
+                    })(),
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__media__get_media_crew_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "get_media_crew",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_media_id = <i64>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
+                    (move || {
+                        let output_ok = crate::api::media::get_media_crew(api_media_id)?;
+                        Ok(output_ok)
+                    })(),
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__media__get_media_snapshots_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "get_media_snapshots",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_media_type = <String>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || {
-                        let output_ok = crate::api::media::get_media(&api_media_type)?;
+                        let output_ok = crate::api::media::get_media_snapshots(&api_media_type)?;
                         Ok(output_ok)
                     })(),
                 )
@@ -312,6 +417,20 @@ impl SseDecode for Vec<crate::movie_data::movie_data::MovieSnapshot> {
     }
 }
 
+impl SseDecode for Vec<crate::movie_data::movie_data::PersonData> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = vec![];
+        for idx_ in 0..len_ {
+            ans_.push(<crate::movie_data::movie_data::PersonData>::sse_decode(
+                deserializer,
+            ));
+        }
+        return ans_;
+    }
+}
+
 impl SseDecode for Vec<u8> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -324,22 +443,68 @@ impl SseDecode for Vec<u8> {
     }
 }
 
+impl SseDecode for crate::movie_data::movie_data::MediaData {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_id = <i64>::sse_decode(deserializer);
+        let mut var_filePath = <String>::sse_decode(deserializer);
+        let mut var_fileOptionalInfo = <String>::sse_decode(deserializer);
+        let mut var_originalTitle = <String>::sse_decode(deserializer);
+        let mut var_title = <String>::sse_decode(deserializer);
+        let mut var_rating = <f32>::sse_decode(deserializer);
+        let mut var_releaseDate = <String>::sse_decode(deserializer);
+        let mut var_summary = <String>::sse_decode(deserializer);
+        let mut var_poster = <String>::sse_decode(deserializer);
+        let mut var_backdrop = <String>::sse_decode(deserializer);
+        return crate::movie_data::movie_data::MediaData {
+            id: var_id,
+            file_path: var_filePath,
+            file_optional_info: var_fileOptionalInfo,
+            original_title: var_originalTitle,
+            title: var_title,
+            rating: var_rating,
+            release_date: var_releaseDate,
+            summary: var_summary,
+            poster: var_poster,
+            backdrop: var_backdrop,
+        };
+    }
+}
+
 impl SseDecode for crate::movie_data::movie_data::MovieSnapshot {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        let mut var_tmdbId = <i64>::sse_decode(deserializer);
+        let mut var_id = <i64>::sse_decode(deserializer);
         let mut var_filePath = <String>::sse_decode(deserializer);
         let mut var_title = <String>::sse_decode(deserializer);
         let mut var_rating = <f32>::sse_decode(deserializer);
         let mut var_releaseDate = <String>::sse_decode(deserializer);
-        let mut var_posterSnapshot = <String>::sse_decode(deserializer);
+        let mut var_poster = <String>::sse_decode(deserializer);
         return crate::movie_data::movie_data::MovieSnapshot {
-            tmdb_id: var_tmdbId,
+            id: var_id,
             file_path: var_filePath,
             title: var_title,
             rating: var_rating,
             release_date: var_releaseDate,
-            poster_snapshot: var_posterSnapshot,
+            poster: var_poster,
+        };
+    }
+}
+
+impl SseDecode for crate::movie_data::movie_data::PersonData {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_tmdbId = <i64>::sse_decode(deserializer);
+        let mut var_name = <String>::sse_decode(deserializer);
+        let mut var_character = <String>::sse_decode(deserializer);
+        let mut var_jobName = <String>::sse_decode(deserializer);
+        let mut var_picturePath = <String>::sse_decode(deserializer);
+        return crate::movie_data::movie_data::PersonData {
+            tmdb_id: var_tmdbId,
+            name: var_name,
+            character: var_character,
+            job_name: var_jobName,
+            picture_path: var_picturePath,
         };
     }
 }
@@ -380,11 +545,14 @@ fn pde_ffi_dispatcher_primary_impl(
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
         1 => wire__crate__api__media__get_media_impl(port, ptr, rust_vec_len, data_len),
-        2 => wire__crate__api__media__init_app_impl(port, ptr, rust_vec_len, data_len),
-        3 => wire__crate__api__media__open_video_impl(port, ptr, rust_vec_len, data_len),
-        4 => wire__crate__api__media__start_impl(port, ptr, rust_vec_len, data_len),
-        5 => wire__crate__api__media__tempo_mount_smb_impl(port, ptr, rust_vec_len, data_len),
-        6 => wire__crate__api__media__tempo_unmount_smb_impl(port, ptr, rust_vec_len, data_len),
+        2 => wire__crate__api__media__get_media_cast_impl(port, ptr, rust_vec_len, data_len),
+        3 => wire__crate__api__media__get_media_crew_impl(port, ptr, rust_vec_len, data_len),
+        4 => wire__crate__api__media__get_media_snapshots_impl(port, ptr, rust_vec_len, data_len),
+        5 => wire__crate__api__media__init_app_impl(port, ptr, rust_vec_len, data_len),
+        6 => wire__crate__api__media__open_video_impl(port, ptr, rust_vec_len, data_len),
+        7 => wire__crate__api__media__start_impl(port, ptr, rust_vec_len, data_len),
+        8 => wire__crate__api__media__tempo_mount_smb_impl(port, ptr, rust_vec_len, data_len),
+        9 => wire__crate__api__media__tempo_unmount_smb_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -404,15 +572,44 @@ fn pde_ffi_dispatcher_sync_impl(
 // Section: rust2dart
 
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::movie_data::movie_data::MediaData {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.id.into_into_dart().into_dart(),
+            self.file_path.into_into_dart().into_dart(),
+            self.file_optional_info.into_into_dart().into_dart(),
+            self.original_title.into_into_dart().into_dart(),
+            self.title.into_into_dart().into_dart(),
+            self.rating.into_into_dart().into_dart(),
+            self.release_date.into_into_dart().into_dart(),
+            self.summary.into_into_dart().into_dart(),
+            self.poster.into_into_dart().into_dart(),
+            self.backdrop.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::movie_data::movie_data::MediaData
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::movie_data::movie_data::MediaData>
+    for crate::movie_data::movie_data::MediaData
+{
+    fn into_into_dart(self) -> crate::movie_data::movie_data::MediaData {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::movie_data::movie_data::MovieSnapshot {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.tmdb_id.into_into_dart().into_dart(),
+            self.id.into_into_dart().into_dart(),
             self.file_path.into_into_dart().into_dart(),
             self.title.into_into_dart().into_dart(),
             self.rating.into_into_dart().into_dart(),
             self.release_date.into_into_dart().into_dart(),
-            self.poster_snapshot.into_into_dart().into_dart(),
+            self.poster.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -425,6 +622,30 @@ impl flutter_rust_bridge::IntoIntoDart<crate::movie_data::movie_data::MovieSnaps
     for crate::movie_data::movie_data::MovieSnapshot
 {
     fn into_into_dart(self) -> crate::movie_data::movie_data::MovieSnapshot {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::movie_data::movie_data::PersonData {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.tmdb_id.into_into_dart().into_dart(),
+            self.name.into_into_dart().into_dart(),
+            self.character.into_into_dart().into_dart(),
+            self.job_name.into_into_dart().into_dart(),
+            self.picture_path.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::movie_data::movie_data::PersonData
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::movie_data::movie_data::PersonData>
+    for crate::movie_data::movie_data::PersonData
+{
+    fn into_into_dart(self) -> crate::movie_data::movie_data::PersonData {
         self
     }
 }
@@ -467,6 +688,16 @@ impl SseEncode for Vec<crate::movie_data::movie_data::MovieSnapshot> {
     }
 }
 
+impl SseEncode for Vec<crate::movie_data::movie_data::PersonData> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::movie_data::movie_data::PersonData>::sse_encode(item, serializer);
+        }
+    }
+}
+
 impl SseEncode for Vec<u8> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -477,15 +708,42 @@ impl SseEncode for Vec<u8> {
     }
 }
 
+impl SseEncode for crate::movie_data::movie_data::MediaData {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i64>::sse_encode(self.id, serializer);
+        <String>::sse_encode(self.file_path, serializer);
+        <String>::sse_encode(self.file_optional_info, serializer);
+        <String>::sse_encode(self.original_title, serializer);
+        <String>::sse_encode(self.title, serializer);
+        <f32>::sse_encode(self.rating, serializer);
+        <String>::sse_encode(self.release_date, serializer);
+        <String>::sse_encode(self.summary, serializer);
+        <String>::sse_encode(self.poster, serializer);
+        <String>::sse_encode(self.backdrop, serializer);
+    }
+}
+
 impl SseEncode for crate::movie_data::movie_data::MovieSnapshot {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <i64>::sse_encode(self.tmdb_id, serializer);
+        <i64>::sse_encode(self.id, serializer);
         <String>::sse_encode(self.file_path, serializer);
         <String>::sse_encode(self.title, serializer);
         <f32>::sse_encode(self.rating, serializer);
         <String>::sse_encode(self.release_date, serializer);
-        <String>::sse_encode(self.poster_snapshot, serializer);
+        <String>::sse_encode(self.poster, serializer);
+    }
+}
+
+impl SseEncode for crate::movie_data::movie_data::PersonData {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i64>::sse_encode(self.tmdb_id, serializer);
+        <String>::sse_encode(self.name, serializer);
+        <String>::sse_encode(self.character, serializer);
+        <String>::sse_encode(self.job_name, serializer);
+        <String>::sse_encode(self.picture_path, serializer);
     }
 }
 

@@ -6,41 +6,131 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-class MovieSnapshot {
-  final PlatformInt64 tmdbId;
+class MediaData {
+  final PlatformInt64 id;
   final String filePath;
+  final String fileOptionalInfo;
+  final String originalTitle;
   final String title;
   final double rating;
   final String releaseDate;
-  final String posterSnapshot;
+  final String summary;
+  final String poster;
+  final String backdrop;
 
-  const MovieSnapshot({
-    required this.tmdbId,
+  const MediaData({
+    required this.id,
     required this.filePath,
+    required this.fileOptionalInfo,
+    required this.originalTitle,
     required this.title,
     required this.rating,
     required this.releaseDate,
-    required this.posterSnapshot,
+    required this.summary,
+    required this.poster,
+    required this.backdrop,
   });
 
   @override
   int get hashCode =>
-      tmdbId.hashCode ^
+      id.hashCode ^
+      filePath.hashCode ^
+      fileOptionalInfo.hashCode ^
+      originalTitle.hashCode ^
+      title.hashCode ^
+      rating.hashCode ^
+      releaseDate.hashCode ^
+      summary.hashCode ^
+      poster.hashCode ^
+      backdrop.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MediaData &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          filePath == other.filePath &&
+          fileOptionalInfo == other.fileOptionalInfo &&
+          originalTitle == other.originalTitle &&
+          title == other.title &&
+          rating == other.rating &&
+          releaseDate == other.releaseDate &&
+          summary == other.summary &&
+          poster == other.poster &&
+          backdrop == other.backdrop;
+}
+
+class MovieSnapshot {
+  final PlatformInt64 id;
+  final String filePath;
+  final String title;
+  final double rating;
+  final String releaseDate;
+  final String poster;
+
+  const MovieSnapshot({
+    required this.id,
+    required this.filePath,
+    required this.title,
+    required this.rating,
+    required this.releaseDate,
+    required this.poster,
+  });
+
+  @override
+  int get hashCode =>
+      id.hashCode ^
       filePath.hashCode ^
       title.hashCode ^
       rating.hashCode ^
       releaseDate.hashCode ^
-      posterSnapshot.hashCode;
+      poster.hashCode;
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is MovieSnapshot &&
           runtimeType == other.runtimeType &&
-          tmdbId == other.tmdbId &&
+          id == other.id &&
           filePath == other.filePath &&
           title == other.title &&
           rating == other.rating &&
           releaseDate == other.releaseDate &&
-          posterSnapshot == other.posterSnapshot;
+          poster == other.poster;
+}
+
+class PersonData {
+  final PlatformInt64 tmdbId;
+  final String name;
+  final String character;
+  final String jobName;
+  final String picturePath;
+
+  const PersonData({
+    required this.tmdbId,
+    required this.name,
+    required this.character,
+    required this.jobName,
+    required this.picturePath,
+  });
+
+  @override
+  int get hashCode =>
+      tmdbId.hashCode ^
+      name.hashCode ^
+      character.hashCode ^
+      jobName.hashCode ^
+      picturePath.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PersonData &&
+          runtimeType == other.runtimeType &&
+          tmdbId == other.tmdbId &&
+          name == other.name &&
+          character == other.character &&
+          jobName == other.jobName &&
+          picturePath == other.picturePath;
 }

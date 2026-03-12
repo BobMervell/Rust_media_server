@@ -1,4 +1,4 @@
-import 'package:fluster_media_center/features/LibraryFilters/widgets/media_snapshot.dart';
+import 'package:fluster_media_center/features/LibraryViewer/widgets/media_snapshot.dart';
 import 'package:fluster_media_center/src/rust/api/media.dart';
 import 'package:fluster_media_center/src/rust/movie_data/movie_data.dart';
 import 'package:flutter/material.dart';
@@ -22,7 +22,7 @@ class _LibraryViewState extends State<LibraryView> {
 
   void loadMedias() async {
     try {
-      final result = await getMedia(mediaType: "movie");
+      final result = await getMediaSnapshots(mediaType: "movie");
       setState(() {
         medias = result;
       });

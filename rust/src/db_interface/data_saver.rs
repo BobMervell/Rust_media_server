@@ -46,8 +46,7 @@ impl DataSaver {
                 release_date TEXT,
                 summary TEXT NOT NULL,
                 vote_average REAL NOT NULL DEFAULT 0,
-                poster_large TEXT NOT NULL,
-                poster_snapshot TEXT NOT NULL,
+                poster TEXT NOT NULL,
                 backdrop TEXT NOT NULL
             )",
                 (),
@@ -186,8 +185,8 @@ impl DataSaver {
         tx.execute(
             "
         INSERT INTO Movie ( tmdb_id, file_path, file_optional_info, title, original_title,
-        release_date, summary, vote_average, poster_large, poster_snapshot, backdrop)
-        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
+        release_date, summary, vote_average, poster, backdrop)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
         ON CONFLICT(file_path) DO NOTHING;",
             (
                 m.tmdb_id(),
@@ -198,8 +197,7 @@ impl DataSaver {
                 m.release_date(),
                 m.summary(),
                 m.vote_average(),
-                m.poster_large(),
-                m.poster_snapshot(),
+                m.poster(),
                 m.backdrop(),
             ),
         )
