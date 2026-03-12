@@ -454,7 +454,7 @@ impl SseDecode for crate::movie_data::movie_data::MediaData {
         let mut var_rating = <f32>::sse_decode(deserializer);
         let mut var_releaseDate = <String>::sse_decode(deserializer);
         let mut var_summary = <String>::sse_decode(deserializer);
-        let mut var_posterLarge = <String>::sse_decode(deserializer);
+        let mut var_poster = <String>::sse_decode(deserializer);
         let mut var_backdrop = <String>::sse_decode(deserializer);
         return crate::movie_data::movie_data::MediaData {
             id: var_id,
@@ -465,7 +465,7 @@ impl SseDecode for crate::movie_data::movie_data::MediaData {
             rating: var_rating,
             release_date: var_releaseDate,
             summary: var_summary,
-            poster_large: var_posterLarge,
+            poster: var_poster,
             backdrop: var_backdrop,
         };
     }
@@ -479,14 +479,14 @@ impl SseDecode for crate::movie_data::movie_data::MovieSnapshot {
         let mut var_title = <String>::sse_decode(deserializer);
         let mut var_rating = <f32>::sse_decode(deserializer);
         let mut var_releaseDate = <String>::sse_decode(deserializer);
-        let mut var_posterSnapshot = <String>::sse_decode(deserializer);
+        let mut var_poster = <String>::sse_decode(deserializer);
         return crate::movie_data::movie_data::MovieSnapshot {
             id: var_id,
             file_path: var_filePath,
             title: var_title,
             rating: var_rating,
             release_date: var_releaseDate,
-            poster_snapshot: var_posterSnapshot,
+            poster: var_poster,
         };
     }
 }
@@ -583,7 +583,7 @@ impl flutter_rust_bridge::IntoDart for crate::movie_data::movie_data::MediaData 
             self.rating.into_into_dart().into_dart(),
             self.release_date.into_into_dart().into_dart(),
             self.summary.into_into_dart().into_dart(),
-            self.poster_large.into_into_dart().into_dart(),
+            self.poster.into_into_dart().into_dart(),
             self.backdrop.into_into_dart().into_dart(),
         ]
         .into_dart()
@@ -609,7 +609,7 @@ impl flutter_rust_bridge::IntoDart for crate::movie_data::movie_data::MovieSnaps
             self.title.into_into_dart().into_dart(),
             self.rating.into_into_dart().into_dart(),
             self.release_date.into_into_dart().into_dart(),
-            self.poster_snapshot.into_into_dart().into_dart(),
+            self.poster.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -719,7 +719,7 @@ impl SseEncode for crate::movie_data::movie_data::MediaData {
         <f32>::sse_encode(self.rating, serializer);
         <String>::sse_encode(self.release_date, serializer);
         <String>::sse_encode(self.summary, serializer);
-        <String>::sse_encode(self.poster_large, serializer);
+        <String>::sse_encode(self.poster, serializer);
         <String>::sse_encode(self.backdrop, serializer);
     }
 }
@@ -732,7 +732,7 @@ impl SseEncode for crate::movie_data::movie_data::MovieSnapshot {
         <String>::sse_encode(self.title, serializer);
         <f32>::sse_encode(self.rating, serializer);
         <String>::sse_encode(self.release_date, serializer);
-        <String>::sse_encode(self.poster_snapshot, serializer);
+        <String>::sse_encode(self.poster, serializer);
     }
 }
 

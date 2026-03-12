@@ -441,7 +441,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       rating: dco_decode_f_32(arr[5]),
       releaseDate: dco_decode_String(arr[6]),
       summary: dco_decode_String(arr[7]),
-      posterLarge: dco_decode_String(arr[8]),
+      poster: dco_decode_String(arr[8]),
       backdrop: dco_decode_String(arr[9]),
     );
   }
@@ -458,7 +458,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       title: dco_decode_String(arr[2]),
       rating: dco_decode_f_32(arr[3]),
       releaseDate: dco_decode_String(arr[4]),
-      posterSnapshot: dco_decode_String(arr[5]),
+      poster: dco_decode_String(arr[5]),
     );
   }
 
@@ -559,7 +559,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_rating = sse_decode_f_32(deserializer);
     var var_releaseDate = sse_decode_String(deserializer);
     var var_summary = sse_decode_String(deserializer);
-    var var_posterLarge = sse_decode_String(deserializer);
+    var var_poster = sse_decode_String(deserializer);
     var var_backdrop = sse_decode_String(deserializer);
     return MediaData(
       id: var_id,
@@ -570,7 +570,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       rating: var_rating,
       releaseDate: var_releaseDate,
       summary: var_summary,
-      posterLarge: var_posterLarge,
+      poster: var_poster,
       backdrop: var_backdrop,
     );
   }
@@ -583,14 +583,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_title = sse_decode_String(deserializer);
     var var_rating = sse_decode_f_32(deserializer);
     var var_releaseDate = sse_decode_String(deserializer);
-    var var_posterSnapshot = sse_decode_String(deserializer);
+    var var_poster = sse_decode_String(deserializer);
     return MovieSnapshot(
       id: var_id,
       filePath: var_filePath,
       title: var_title,
       rating: var_rating,
       releaseDate: var_releaseDate,
-      posterSnapshot: var_posterSnapshot,
+      poster: var_poster,
     );
   }
 
@@ -706,7 +706,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_f_32(self.rating, serializer);
     sse_encode_String(self.releaseDate, serializer);
     sse_encode_String(self.summary, serializer);
-    sse_encode_String(self.posterLarge, serializer);
+    sse_encode_String(self.poster, serializer);
     sse_encode_String(self.backdrop, serializer);
   }
 
@@ -718,7 +718,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_String(self.title, serializer);
     sse_encode_f_32(self.rating, serializer);
     sse_encode_String(self.releaseDate, serializer);
-    sse_encode_String(self.posterSnapshot, serializer);
+    sse_encode_String(self.poster, serializer);
   }
 
   @protected

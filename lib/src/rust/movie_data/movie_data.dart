@@ -15,7 +15,7 @@ class MediaData {
   final double rating;
   final String releaseDate;
   final String summary;
-  final String posterLarge;
+  final String poster;
   final String backdrop;
 
   const MediaData({
@@ -27,7 +27,7 @@ class MediaData {
     required this.rating,
     required this.releaseDate,
     required this.summary,
-    required this.posterLarge,
+    required this.poster,
     required this.backdrop,
   });
 
@@ -41,7 +41,7 @@ class MediaData {
       rating.hashCode ^
       releaseDate.hashCode ^
       summary.hashCode ^
-      posterLarge.hashCode ^
+      poster.hashCode ^
       backdrop.hashCode;
 
   @override
@@ -57,7 +57,7 @@ class MediaData {
           rating == other.rating &&
           releaseDate == other.releaseDate &&
           summary == other.summary &&
-          posterLarge == other.posterLarge &&
+          poster == other.poster &&
           backdrop == other.backdrop;
 }
 
@@ -67,7 +67,7 @@ class MovieSnapshot {
   final String title;
   final double rating;
   final String releaseDate;
-  final String posterSnapshot;
+  final String poster;
 
   const MovieSnapshot({
     required this.id,
@@ -75,7 +75,7 @@ class MovieSnapshot {
     required this.title,
     required this.rating,
     required this.releaseDate,
-    required this.posterSnapshot,
+    required this.poster,
   });
 
   @override
@@ -85,7 +85,7 @@ class MovieSnapshot {
       title.hashCode ^
       rating.hashCode ^
       releaseDate.hashCode ^
-      posterSnapshot.hashCode;
+      poster.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -97,7 +97,7 @@ class MovieSnapshot {
           title == other.title &&
           rating == other.rating &&
           releaseDate == other.releaseDate &&
-          posterSnapshot == other.posterSnapshot;
+          poster == other.poster;
 }
 
 class PersonData {
