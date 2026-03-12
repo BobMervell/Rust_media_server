@@ -191,7 +191,7 @@ pub struct MovieSnapshot {
     pub title: String,
     pub rating: f32,
     pub release_date: String,
-    pub poster_snapshot: String,
+    pub poster: String,
 }
 
 impl MovieSnapshot {
@@ -201,7 +201,7 @@ impl MovieSnapshot {
         title: String,
         rating: f32,
         release_date: String,
-        poster_snapshot: String,
+        poster: String,
     ) -> Self {
         Self {
             id,
@@ -209,7 +209,7 @@ impl MovieSnapshot {
             title,
             rating,
             release_date,
-            poster_snapshot,
+            poster,
         }
     }
 }
@@ -226,7 +226,7 @@ pub struct MediaData {
     pub rating: f32,
     pub release_date: String,
     pub summary: String,
-    pub poster_large: String,
+    pub poster: String,
     pub backdrop: String,
 }
 
@@ -240,7 +240,7 @@ impl MediaData {
         rating: f32,
         release_date: String,
         summary: String,
-        poster_large: String,
+        poster: String,
         backdrop: String,
     ) -> Self {
         Self {
@@ -252,7 +252,7 @@ impl MediaData {
             rating,
             release_date,
             summary,
-            poster_large,
+            poster,
             backdrop,
         }
     }
@@ -302,8 +302,7 @@ pub struct MovieData {
     vote_average: f32,
     release_date: String,
     summary: String,
-    poster_large: Option<String>,
-    poster_snapshot: Option<String>,
+    poster: Option<String>,
     backdrop: Option<String>,
 }
 // region: ---- DISPLAY ----
@@ -324,7 +323,6 @@ impl fmt::Display for MovieData {
              Release date:        {}\n\
              Summary:             {}\n\
              Poster large:        {:?}\n\
-             Poster snapshot:     {:?}\n\
              Backdrop:            {:?}",
             self.id,
             self.file_path,
@@ -338,8 +336,7 @@ impl fmt::Display for MovieData {
             self.vote_average,
             self.release_date,
             self.summary,
-            self.poster_large,
-            self.poster_snapshot,
+            self.poster,
             self.backdrop,
         )
     }
@@ -365,8 +362,7 @@ impl MovieData {
             vote_average: 0.0,
             release_date: "".to_owned(),
             summary: "".to_owned(),
-            poster_large: None,
-            poster_snapshot: None,
+            poster: None,
             backdrop: None,
         })
     }
@@ -443,12 +439,8 @@ impl MovieData {
         &self.summary
     }
 
-    pub fn poster_large(&self) -> Option<&String> {
-        self.poster_large.as_ref()
-    }
-
-    pub fn poster_snapshot(&self) -> Option<&String> {
-        self.poster_snapshot.as_ref()
+    pub fn poster(&self) -> Option<&String> {
+        self.poster.as_ref()
     }
 
     pub fn backdrop(&self) -> Option<&String> {
@@ -518,13 +510,8 @@ impl MovieData {
         self
     }
 
-    pub fn set_poster_large(&mut self, new_poster_large: Option<String>) -> &mut Self {
-        self.poster_large = new_poster_large;
-        self
-    }
-
-    pub fn set_poster_snapshot(&mut self, new_poster_snapshot: Option<String>) -> &mut Self {
-        self.poster_snapshot = new_poster_snapshot;
+    pub fn set_poster(&mut self, new_poster: Option<String>) -> &mut Self {
+        self.poster = new_poster;
         self
     }
 

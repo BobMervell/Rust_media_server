@@ -51,7 +51,7 @@ class MediaSnapshot extends StatelessWidget {
         ),
         clipBehavior: Clip.antiAlias,
         child: Image.file(
-          File(media.posterSnapshot),
+          File(media.poster),
           fit: BoxFit.contain, // ou BoxFit.cover selon le rendu voulu
           errorBuilder: (context, error, stackTrace) {
             return const Text("Impossible de charger l'image");
