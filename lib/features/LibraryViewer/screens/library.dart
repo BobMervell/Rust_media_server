@@ -1,6 +1,6 @@
-import 'package:fluster_media_center/features/LibraryFilters/widgets/library_filters.dart';
-import 'package:fluster_media_center/features/LibraryFilters/widgets/library_header.dart';
-import 'package:fluster_media_center/features/LibraryFilters/widgets/library_view.dart';
+import 'package:fluster_media_center/features/LibraryViewer/widgets/library_filters.dart';
+import 'package:fluster_media_center/features/LibraryViewer/widgets/library_header.dart';
+import 'package:fluster_media_center/features/LibraryViewer/widgets/library_view.dart';
 import 'package:flutter/material.dart';
 
 class Library extends StatelessWidget {

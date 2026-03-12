@@ -323,7 +323,7 @@ impl TMDBClient {
 
     pub async fn update_cast_images(&self, cast: &Cast) -> Result<String> {
         let cast_name = cast.name().to_owned();
-        self.update_images(cast, "person", &cast_name, &cast_name, "w185", |c| {
+        self.update_images(cast, "person", &cast_name, &cast_name, "w300", |c| {
             c.picture_path()
         })
         .await
@@ -331,7 +331,7 @@ impl TMDBClient {
 
     pub async fn update_crew_images(&self, crew: &Crew) -> Result<String> {
         let crew_name = crew.name().to_owned();
-        self.update_images(crew, "person", &crew_name, &crew_name, "w185", |c| {
+        self.update_images(crew, "person", &crew_name, &crew_name, "w300", |c| {
             c.picture_path()
         })
         .await
@@ -339,30 +339,17 @@ impl TMDBClient {
 
     pub async fn update_movie_poster(&self, movie: &MovieData) -> Result<String> {
         let movie_name = movie.title().to_owned();
-        self.update_images(movie, "movie", "poster_large", &movie_name, "w780", |m| {
-            m.poster_large()
+        self.update_images(movie, "movie", "poster", &movie_name, "w780", |m| {
+            m.poster()
         })
         .await
     }
 
     pub async fn update_movie_backdrop(&self, movie: &MovieData) -> Result<String> {
         let movie_name = movie.title().to_owned();
-        self.update_images(movie, "movie", "backdrop", &movie_name, "w1280", |m| {
+        self.update_images(movie, "movie", "backdrop", &movie_name, "original", |m| {
             m.backdrop()
         })
-        .await
-    }
-
-    pub async fn update_movie_poster_snapshot(&self, movie: &MovieData) -> Result<String> {
-        let movie_name = movie.title().to_owned();
-        self.update_images(
-            movie,
-            "movie",
-            "poster_snapshot",
-            &movie_name,
-            "w185",
-            |m| m.poster_snapshot(),
-        )
         .await
     }
 

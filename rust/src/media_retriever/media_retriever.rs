@@ -166,8 +166,7 @@ async fn update_movie_basics(movie: &mut MovieData, client: &TMDBClient) -> Resu
         .set_vote_average(movie_basics.vote_average())
         .set_release_date(movie_basics.release_date())
         .set_summary(movie_basics.overview())
-        .set_poster_large(movie_basics.poster_path().to_owned())
-        .set_poster_snapshot(movie_basics.poster_path().to_owned())
+        .set_poster(movie_basics.poster_path().to_owned())
         .set_backdrop(movie_basics.backdrop_path().to_owned());
 
     Ok(())
@@ -224,7 +223,7 @@ async fn update_movie_posters(movie: &mut MovieData, client: &TMDBClient) {
 
     match client.update_movie_poster(movie).await {
         Ok(snapshot_path) => {
-            movie.set_poster_large(Some(snapshot_path));
+            movie.set_poster(Some(snapshot_path));
         }
         Err(e) => {
             tracing::error!(
@@ -234,20 +233,6 @@ async fn update_movie_posters(movie: &mut MovieData, client: &TMDBClient) {
             )
         }
     }
-
-    match client.update_movie_poster_snapshot(movie).await {
-        Ok(snapshot_path) => {
-            movie.set_poster_snapshot(Some(snapshot_path));
-        }
-        Err(e) => {
-            tracing::error!(
-                "Failed to update movie snapshot for {} \n Caused by {:?}",
-                movie.file_path(),
-                e
-            )
-        }
-    }
-
     tracing::debug!(file_path = &movie.file_path(), "Movie posters downloaded")
 }
 
@@ -337,7 +322,7 @@ fn filter_credits(credits: &mut CreditsMovie) {
     casts.retain(|cast| !cast.character().contains("uncredited"));
 
     let crew = credits.credits_crew_mut();
-    crew.retain(|crew| !match crew.department() {
+    crew.retain(|crew| match crew.department() {
         "Directing" => is_important_directing(crew.job()),
         "Production" => is_important_production(crew.job()),
         "Camera" => is_important_camera(crew.job()),

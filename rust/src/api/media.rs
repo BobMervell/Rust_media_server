@@ -1,4 +1,4 @@
-pub use crate::movie_data::movie_data::MovieSnapshot; //expose for dart
+pub use crate::movie_data::movie_data::{MediaData, MovieSnapshot, PersonData}; //expose for dart
 use crate::{
     db_interface::data_getter::DataGetter,
     media_retriever::media_retriever::retrieve_media,
@@ -34,9 +34,27 @@ pub async fn start(path: &str, username: &str, password: &str, token: &str) -> S
 }
 
 #[flutter_rust_bridge::frb]
-pub fn get_media(media_type: &str) -> Result<Vec<MovieSnapshot>> {
+pub fn get_media_snapshots(media_type: &str) -> Result<Vec<MovieSnapshot>> {
     let data_getter = DataGetter::new("movie_db.db".to_owned())?;
     return data_getter.get_media_snapshot(media_type);
+}
+
+#[flutter_rust_bridge::frb]
+pub fn get_media(media_id: i64) -> Result<MediaData> {
+    let data_getter = DataGetter::new("movie_db.db".to_owned())?;
+    return data_getter.get_media_data(media_id);
+}
+
+#[flutter_rust_bridge::frb]
+pub fn get_media_cast(media_id: i64) -> Result<Vec<PersonData>> {
+    let data_getter = DataGetter::new("movie_db.db".to_owned())?;
+    return data_getter.get_media_cast(media_id);
+}
+
+#[flutter_rust_bridge::frb]
+pub fn get_media_crew(media_id: i64) -> Result<Vec<PersonData>> {
+    let data_getter = DataGetter::new("movie_db.db".to_owned())?;
+    return data_getter.get_media_crew(media_id);
 }
 
 #[flutter_rust_bridge::frb]
