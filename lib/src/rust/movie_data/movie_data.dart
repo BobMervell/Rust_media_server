@@ -103,11 +103,39 @@ class MovieSnapshot {
 class PersonData {
   final PlatformInt64 tmdbId;
   final String name;
+  final String summary;
+  final String? picturePath;
+
+  const PersonData({
+    required this.tmdbId,
+    required this.name,
+    required this.summary,
+    this.picturePath,
+  });
+
+  @override
+  int get hashCode =>
+      tmdbId.hashCode ^ name.hashCode ^ summary.hashCode ^ picturePath.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PersonData &&
+          runtimeType == other.runtimeType &&
+          tmdbId == other.tmdbId &&
+          name == other.name &&
+          summary == other.summary &&
+          picturePath == other.picturePath;
+}
+
+class PersonSnapshot {
+  final PlatformInt64 tmdbId;
+  final String name;
   final String character;
   final String jobName;
   final String picturePath;
 
-  const PersonData({
+  const PersonSnapshot({
     required this.tmdbId,
     required this.name,
     required this.character,
@@ -126,7 +154,7 @@ class PersonData {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is PersonData &&
+      other is PersonSnapshot &&
           runtimeType == other.runtimeType &&
           tmdbId == other.tmdbId &&
           name == other.name &&

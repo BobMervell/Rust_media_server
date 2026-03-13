@@ -16,7 +16,7 @@ class CrewScroller extends StatelessWidget {
   Widget build(BuildContext context) {
     double height = MediaQuery.of(context).size.height / 2;
 
-    return FutureBuilder<List<PersonData>>(
+    return FutureBuilder<List<PersonSnapshot>>(
       future: getMediaCrew(mediaId: mediaId),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
@@ -75,7 +75,7 @@ class CrewScrollView extends StatelessWidget {
     required this.textColor,
   });
 
-  final List<PersonData> crew;
+  final List<PersonSnapshot> crew;
   final double height;
   final Color textColor;
 

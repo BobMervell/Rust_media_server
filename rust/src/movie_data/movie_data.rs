@@ -55,26 +55,8 @@ impl CreditsMovie {
     pub fn credits_crew_mut(&mut self) -> &mut Vec<Crew> {
         &mut self.crew
     }
-
-    pub fn set_cast_image(&mut self, indx: usize, image_path: &str) -> Result<()> {
-        if indx > self.cast.len() - 1 {
-            return Err(anyhow!(
-                "index value out of bounds while trying to set cast image path"
-            ));
-        }
-        self.cast[indx].set_picture_path(Some(image_path.to_owned()));
-        Ok(())
-    }
-    pub fn set_crew_image(&mut self, indx: usize, image_path: &str) -> Result<()> {
-        if indx > self.crew.len() - 1 {
-            return Err(anyhow!(
-                "index value out of bounds while trying to set crew image path"
-            ));
-        }
-        self.crew[indx].set_picture_path(Some(image_path.to_owned()));
-        Ok(())
-    }
 }
+
 // endregion
 
 // region: ---- CAST ----
@@ -85,8 +67,6 @@ pub struct Cast {
     #[serde(rename = "id")]
     tmdb_id: i64,
     name: String,
-    #[serde(rename = "profile_path")]
-    picture_path: Option<String>,
     character: String,
     order: i32,
 }
@@ -97,10 +77,9 @@ impl fmt::Display for Cast {
             "Person ID:           {}\n\
              Tmdb_id:             {}\n\
              Name:                {}\n\
-             Picture path:        {:?}\n\
              Character:           {}\n\
              Order:               {}",
-            self.id, self.tmdb_id, self.name, self.picture_path, self.character, self.order
+            self.id, self.tmdb_id, self.name, self.character, self.order
         )
     }
 }
@@ -115,17 +94,11 @@ impl Cast {
     pub fn name(&self) -> &str {
         &self.name
     }
-    pub fn picture_path(&self) -> Option<&String> {
-        self.picture_path.as_ref()
-    }
     pub fn character(&self) -> &str {
         &self.character
     }
     pub fn order(&self) -> i32 {
         self.order
-    }
-    pub fn set_picture_path(&mut self, new_path: Option<String>) {
-        self.picture_path = new_path
     }
 }
 // endregion
@@ -138,8 +111,7 @@ pub struct Crew {
     #[serde(rename = "id")]
     tmdb_id: i64,
     name: String,
-    #[serde(rename = "profile_path")]
-    picture_path: Option<String>,
+
     department: String,
     job: String,
 }
@@ -150,10 +122,9 @@ impl fmt::Display for Crew {
             "Person ID:           {}\n\
              Tmdb_id:             {}\n\
              Name:                {}\n\
-             Picture path:        {:?}\n\
              department:           {}\n\
              job:               {}",
-            self.id, self.tmdb_id, self.name, self.picture_path, self.department, self.job
+            self.id, self.tmdb_id, self.name, self.department, self.job
         )
     }
 }
@@ -168,17 +139,11 @@ impl Crew {
     pub fn name(&self) -> &str {
         &self.name
     }
-    pub fn picture_path(&self) -> Option<&String> {
-        self.picture_path.as_ref()
-    }
     pub fn department(&self) -> &str {
         &self.department
     }
     pub fn job(&self) -> &str {
         &self.job
-    }
-    pub fn set_picture_path(&mut self, new_path: Option<String>) {
-        self.picture_path = new_path
     }
 }
 // endregion
@@ -259,9 +224,9 @@ impl MediaData {
 }
 // endregion
 
-// region: ---- PersonData ----
+// region: ---- PersonSnapshot ----
 #[derive(Debug, Clone)]
-pub struct PersonData {
+pub struct PersonSnapshot {
     pub tmdb_id: i64,
     pub name: String,
     pub character: String,
@@ -269,7 +234,7 @@ pub struct PersonData {
     pub picture_path: String,
 }
 
-impl PersonData {
+impl PersonSnapshot {
     pub fn new(
         tmdb_id: i64,
         name: String,
@@ -284,6 +249,50 @@ impl PersonData {
             job_name,
             picture_path,
         }
+    }
+}
+// endregion
+
+// region: ---- PersonData ----
+#[derive(Deserialize, Debug, Clone)]
+pub struct PersonData {
+    #[serde(rename = "id")]
+    pub tmdb_id: i64,
+    pub name: String,
+    #[serde(rename = "biography")]
+    pub summary: String,
+    #[serde(rename = "profile_path")]
+    pub picture_path: Option<String>,
+}
+
+impl PersonData {
+    pub fn new(tmdb_id: i64, name: String, summary: String, picture_path: Option<String>) -> Self {
+        Self {
+            tmdb_id,
+            name,
+            summary,
+            picture_path,
+        }
+    }
+
+    pub fn tmdb_id(&self) -> i64 {
+        self.tmdb_id
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn summary(&self) -> &str {
+        &self.summary
+    }
+
+    pub fn picture_path(&self) -> Option<&String> {
+        self.picture_path.as_ref()
+    }
+
+    pub fn set_picture_path(&mut self, path: String) {
+        self.picture_path = Some(path)
     }
 }
 // endregion

@@ -37,7 +37,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<MovieSnapshot> dco_decode_list_movie_snapshot(dynamic raw);
 
   @protected
-  List<PersonData> dco_decode_list_person_data(dynamic raw);
+  List<PersonSnapshot> dco_decode_list_person_snapshot(dynamic raw);
 
   @protected
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
@@ -49,7 +49,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   MovieSnapshot dco_decode_movie_snapshot(dynamic raw);
 
   @protected
+  String? dco_decode_opt_String(dynamic raw);
+
+  @protected
   PersonData dco_decode_person_data(dynamic raw);
+
+  @protected
+  PersonSnapshot dco_decode_person_snapshot(dynamic raw);
 
   @protected
   int dco_decode_u_8(dynamic raw);
@@ -75,7 +81,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  List<PersonData> sse_decode_list_person_data(SseDeserializer deserializer);
+  List<PersonSnapshot> sse_decode_list_person_snapshot(
+    SseDeserializer deserializer,
+  );
 
   @protected
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
@@ -87,7 +95,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   MovieSnapshot sse_decode_movie_snapshot(SseDeserializer deserializer);
 
   @protected
+  String? sse_decode_opt_String(SseDeserializer deserializer);
+
+  @protected
   PersonData sse_decode_person_data(SseDeserializer deserializer);
+
+  @protected
+  PersonSnapshot sse_decode_person_snapshot(SseDeserializer deserializer);
 
   @protected
   int sse_decode_u_8(SseDeserializer deserializer);
@@ -123,8 +137,8 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  void sse_encode_list_person_data(
-    List<PersonData> self,
+  void sse_encode_list_person_snapshot(
+    List<PersonSnapshot> self,
     SseSerializer serializer,
   );
 
@@ -141,7 +155,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_movie_snapshot(MovieSnapshot self, SseSerializer serializer);
 
   @protected
+  void sse_encode_opt_String(String? self, SseSerializer serializer);
+
+  @protected
   void sse_encode_person_data(PersonData self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_person_snapshot(
+    PersonSnapshot self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_u_8(int self, SseSerializer serializer);

@@ -1,4 +1,4 @@
-use crate::movie_data::movie_data::{MediaData, MovieSnapshot, PersonData};
+use crate::movie_data::movie_data::{MediaData, MovieSnapshot, PersonData, PersonSnapshot};
 use anyhow::{Context, Result};
 use rusqlite::Connection;
 
@@ -51,7 +51,7 @@ impl DataGetter {
             .prepare(
                 "SELECT id, file_path, file_optional_info, original_title, title,
                 vote_average AS rating, release_date, summary, poster, backdrop
-         FROM MOVIE
+         FROM Movie
          WHERE id = ?1",
             )
             .with_context(|| "Failed to prepare statement for data selection")?;
@@ -76,12 +76,14 @@ impl DataGetter {
         Ok(media)
     }
 
-    pub fn get_media_cast(&self, media_id: i64) -> Result<Vec<PersonData>> {
+    pub fn get_media_cast(&self, media_id: i64) -> Result<Vec<PersonSnapshot>> {
         let query_str = format!(
-            "SELECT tmdb_id, name, character, job_name, picture_path
-             FROM Person
-             WHERE movie_id = ?1 AND job_name = 'actor'
-             ORDER BY id ",
+            "SELECT c.tmdb_id, c.name, c.character, c.job_name, p.picture_path
+             FROM Credits AS c
+             INNER JOIN Person AS p
+                ON c.tmdb_id = p.tmdb_id
+             WHERE c.movie_id = ?1 AND c.job_name = 'actor'
+             ORDER BY c.id ",
         );
 
         let mut stmt = self
@@ -91,7 +93,7 @@ impl DataGetter {
 
         let mapped_rows = stmt
             .query_map([media_id], |row| {
-                Ok(PersonData::new(
+                Ok(PersonSnapshot::new(
                     row.get(0)?,
                     row.get(1)?,
                     row.get(2)?,
@@ -103,15 +105,17 @@ impl DataGetter {
 
         Ok(mapped_rows
             .filter_map(|res| res.ok())
-            .collect::<Vec<PersonData>>())
+            .collect::<Vec<PersonSnapshot>>())
     }
 
-    pub fn get_media_crew(&self, media_id: i64) -> Result<Vec<PersonData>> {
+    pub fn get_media_crew(&self, media_id: i64) -> Result<Vec<PersonSnapshot>> {
         let query_str = format!(
-            "SELECT tmdb_id, name, character, job_name, picture_path
-             FROM Person
-             WHERE movie_id = ?1 AND job_name != 'actor'
-             ORDER BY id ",
+            "SELECT c.tmdb_id, c.name, c.character, c.job_name, p.picture_path
+             FROM Credits AS c
+             INNER JOIN Person AS p
+                ON c.tmdb_id = p.tmdb_id
+             WHERE c.movie_id = ?1 AND c.job_name != 'actor'
+             ORDER BY c.id",
         );
 
         let mut stmt = self
@@ -121,7 +125,7 @@ impl DataGetter {
 
         let mapped_rows = stmt
             .query_map([media_id], |row| {
-                Ok(PersonData::new(
+                Ok(PersonSnapshot::new(
                     row.get(0)?,
                     row.get(1)?,
                     row.get(2)?,
@@ -133,6 +137,30 @@ impl DataGetter {
 
         Ok(mapped_rows
             .filter_map(|res| res.ok())
-            .collect::<Vec<PersonData>>())
+            .collect::<Vec<PersonSnapshot>>())
+    }
+
+    pub fn get_person_data(&self, tmdb_id: i64) -> Result<PersonData> {
+        let mut stmt = self
+            .conn
+            .prepare(
+                "SELECT tmdb_id, name, summary, picture_path
+         FROM Person
+         WHERE tmdb_id = ?1",
+            )
+            .with_context(|| "Failed to prepare statement for data selection")?;
+
+        let person = stmt
+            .query_row([tmdb_id], |row| {
+                Ok(PersonData::new(
+                    row.get(0)?,
+                    row.get(1)?,
+                    row.get(2)?,
+                    row.get(3)?,
+                ))
+            })
+            .with_context(|| "Failed to fetch media data")?;
+
+        Ok(person)
     }
 }

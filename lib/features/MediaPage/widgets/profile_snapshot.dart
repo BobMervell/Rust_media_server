@@ -3,7 +3,7 @@ import 'package:fluster_media_center/src/rust/movie_data/movie_data.dart';
 import 'package:flutter/material.dart';
 
 class ProfileSnapshot extends StatelessWidget {
-  final PersonData person;
+  final PersonSnapshot person;
   final double height;
   final Color textColor;
 
@@ -34,7 +34,7 @@ class ProfilePicture extends StatelessWidget {
   const ProfilePicture({super.key, required this.height, required this.person});
 
   final double height;
-  final PersonData person;
+  final PersonSnapshot person;
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +70,7 @@ class ProfilePicture extends StatelessWidget {
 class ProfileName extends StatelessWidget {
   const ProfileName({super.key, required this.person, required this.textColor});
 
-  final PersonData person;
+  final PersonSnapshot person;
   final Color textColor;
 
   @override
@@ -89,7 +89,7 @@ class ProfileName extends StatelessWidget {
 class ProfileRole extends StatelessWidget {
   const ProfileRole({super.key, required this.person, required this.textColor});
 
-  final PersonData person;
+  final PersonSnapshot person;
   final Color textColor;
 
   @override
