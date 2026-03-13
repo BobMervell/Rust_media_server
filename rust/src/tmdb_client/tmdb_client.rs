@@ -1,5 +1,5 @@
 use crate::{
-    movie_data::movie_data::{Cast, CreditsMovie, Crew, Genre, MovieData},
+    movie_data::movie_data::{Cast, CreditsMovie, Crew, Genre, MovieData, PersonData},
     os_interface::file_interface::{create_dir, save_image},
 };
 use anyhow::{anyhow, Context, Result};
@@ -280,6 +280,37 @@ impl TMDBClient {
         })?;
         Ok(credits_details)
     }
+
+    pub async fn fetch_person_details(&self, tmdb_id: i64) -> Result<PersonData> {
+        let url = format!("{}/person/{}", TMDB_BASE_URL, &tmdb_id);
+
+        let response = self
+            .client
+            .get(&url)
+            .send()
+            .await
+            .with_context(|| {
+                format!(
+                    "Failed to get person detail response for person id: {} , from url: {}",
+                    tmdb_id, &url
+                )
+            })?
+            .error_for_status()
+            .with_context(|| {
+                format!(
+                    "TMDB returned error status for person id: {} , from url: {}",
+                    tmdb_id, &url
+                )
+            })?;
+
+        let person_details = response.json::<PersonData>().await.with_context(|| {
+            format!(
+                "Failed to deserialize person details response for person id: {}, from url: {}",
+                tmdb_id, &url
+            )
+        })?;
+        Ok(person_details)
+    }
     // endregion
 
     // region: ----- GET IMAGES -----
@@ -321,17 +352,9 @@ impl TMDBClient {
         return Ok(dir_path);
     }
 
-    pub async fn update_cast_images(&self, cast: &Cast) -> Result<String> {
-        let cast_name = cast.name().to_owned();
-        self.update_images(cast, "person", &cast_name, &cast_name, "w300", |c| {
-            c.picture_path()
-        })
-        .await
-    }
-
-    pub async fn update_crew_images(&self, crew: &Crew) -> Result<String> {
-        let crew_name = crew.name().to_owned();
-        self.update_images(crew, "person", &crew_name, &crew_name, "w300", |c| {
+    pub async fn update_person_images(&self, person: &mut PersonData) -> Result<String> {
+        let person_name = person.name().to_owned();
+        self.update_images(person, "person", &person_name, &person_name, "w300", |c| {
             c.picture_path()
         })
         .await

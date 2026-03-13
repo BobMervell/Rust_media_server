@@ -27,11 +27,14 @@ Future<List<MovieSnapshot>> getMediaSnapshots({required String mediaType}) =>
 Future<MediaData> getMedia({required PlatformInt64 mediaId}) =>
     RustLib.instance.api.crateApiMediaGetMedia(mediaId: mediaId);
 
-Future<List<PersonData>> getMediaCast({required PlatformInt64 mediaId}) =>
+Future<List<PersonSnapshot>> getMediaCast({required PlatformInt64 mediaId}) =>
     RustLib.instance.api.crateApiMediaGetMediaCast(mediaId: mediaId);
 
-Future<List<PersonData>> getMediaCrew({required PlatformInt64 mediaId}) =>
+Future<List<PersonSnapshot>> getMediaCrew({required PlatformInt64 mediaId}) =>
     RustLib.instance.api.crateApiMediaGetMediaCrew(mediaId: mediaId);
+
+Future<PersonData> getPerson({required PlatformInt64 personTmdbId}) =>
+    RustLib.instance.api.crateApiMediaGetPerson(personTmdbId: personTmdbId);
 
 Future<void> tempoMountSmb() =>
     RustLib.instance.api.crateApiMediaTempoMountSmb();

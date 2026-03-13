@@ -4,7 +4,7 @@ use std::sync::Arc;
 use crate::{
     db_interface::data_saver::DataSaver,
     directory_explorer::smb_explorer::SmbExplorer,
-    movie_data::movie_data::{CreditsMovie, MovieData},
+    movie_data::movie_data::{CreditsMovie, MovieData, PersonData},
     tmdb_client::tmdb_client::TMDBClient,
 };
 use anyhow::{Context, Error, Result};
@@ -48,6 +48,7 @@ fn initiate_db() -> Result<DataSaver> {
     data_saver.create_person_table()?;
     data_saver.create_genre_table()?;
     data_saver.create_movie_genre_table()?;
+    data_saver.create_credits_table()?;
 
     tracing::info!("Data base initiated");
     Ok(data_saver)
@@ -69,11 +70,25 @@ async fn handle_found_movies(
             async move {
                 match movie {
                     Ok(mut movie) => {
-                        let mut credits = fetch_movie_data(&mut movie, &client).await;
+                        let credits = fetch_movie_data(&mut movie, &client).await;
                         update_movie_posters(&mut movie, &client).await;
-                        update_credits_posters(&mut credits, &client, &movie.file_path()).await;
+
+                        let mut persons = get_persons_details(&credits, &client).await;
+
+                        update_persons_posters(&mut persons, &client).await;
 
                         let mut ds = data_saver.lock().await;
+
+                        ds.push_persons(persons)
+                            .map_err(|e| {
+                                tracing::error!(
+                                    "Failed to push persons data for {} \n Caused by {:?}",
+                                    movie.file_path(),
+                                    e
+                                );
+                            })
+                            .ok();
+
                         ds.push_movie_data(&movie, &credits)
                             .map_err(|e| {
                                 tracing::error!(
@@ -202,6 +217,42 @@ async fn get_movie_credits(movie: &mut MovieData, client: &TMDBClient) -> Result
         })?;
     Ok(movie_credits)
 }
+
+async fn get_persons_details(credits: &CreditsMovie, client: &TMDBClient) -> Vec<PersonData> {
+    let mut tmdb_ids: Vec<i64> = credits.credits_cast().iter().map(|c| c.tmdb_id()).collect();
+    let crew_ids: Vec<i64> = credits.credits_crew().iter().map(|c| c.tmdb_id()).collect();
+    tmdb_ids.extend(crew_ids);
+
+    return collect_person_details(tmdb_ids, client).await;
+}
+
+async fn collect_person_details<I>(ids: I, client: &TMDBClient) -> Vec<PersonData>
+where
+    I: IntoIterator<Item = i64>,
+{
+    let batch_size = 20;
+
+    let persons: Vec<PersonData> = stream::iter(ids)
+        .map(|id| async move {
+            match client.fetch_person_details(id).await {
+                Ok(person) => Some(person),
+                Err(e) => {
+                    tracing::error!(
+                        "Failed to get person detail info for person id: {} \n Caused by: {}",
+                        id,
+                        e
+                    );
+                    None
+                }
+            }
+        })
+        .buffer_unordered(batch_size)
+        .filter_map(|p| async move { p })
+        .collect()
+        .await;
+
+    persons
+}
 // endregion
 
 // region: ---- UPDATE IMAGES ----
@@ -237,80 +288,32 @@ async fn update_movie_posters(movie: &mut MovieData, client: &TMDBClient) {
 }
 
 /// Downloads credit profile picture,and set their file paths.
-async fn update_credits_posters(credits: &mut CreditsMovie, client: &TMDBClient, movie_path: &str) {
-    if let Err(e) = update_cast_images(credits, client).await {
-        tracing::error!(
-            "Failed to update cast images for {} \n Caused by {:?}",
-            movie_path,
-            e
-        )
-    }
-
-    if let Err(e) = update_crew_images(credits, client).await {
-        tracing::error!(
-            "Failed to update cast images for: {} \n Caused by {:?}",
-            movie_path,
-            e
-        )
-    }
-
-    tracing::debug!(file_path = movie_path, "Credits posters downloaded");
-}
-
-/// Downloads cast profile picture,and set their file paths.
-async fn update_cast_images(movie_credits: &mut CreditsMovie, client: &TMDBClient) -> Result<()> {
+async fn update_persons_posters(persons: &mut Vec<PersonData>, client: &TMDBClient) {
     let batch_size = 20;
-    let casts = movie_credits.credits_cast().clone();
 
-    let updates = stream::iter(casts.into_iter().enumerate())
-        .map(|(index, cast)| async move { (index, client.update_cast_images(&cast).await) })
+    let tasks = persons
+        .iter()
+        .cloned() // clone for frb_generated
+        .enumerate()
+        .map(|(index, mut person)| async move {
+            let path = client.update_person_images(&mut person).await;
+            (index, person, path)
+        })
+        .collect::<Vec<_>>();
+
+    let results = futures::stream::iter(tasks)
         .buffer_unordered(batch_size)
         .collect::<Vec<_>>()
         .await;
 
-    for (index, result) in updates {
+    for (index, mut person, result) in results {
         if let Ok(path) = result {
-            movie_credits
-                .set_cast_image(index, &path)
-                .map_err(|e| {
-                    tracing::error!(
-                        "Failed to set cast image for path: {} \n Caused by {:?}",
-                        path,
-                        e
-                    );
-                })
-                .ok();
+            person.set_picture_path(path);
+            persons[index] = person;
         }
     }
-    Ok(())
-}
 
-/// Downloads crew profile picture,and set their file paths.
-async fn update_crew_images(movie_credits: &mut CreditsMovie, client: &TMDBClient) -> Result<()> {
-    let batch_size = 20;
-    let crews = movie_credits.credits_crew().clone();
-
-    let updates = stream::iter(crews.into_iter().enumerate())
-        .map(|(index, crew)| async move { (index, client.update_crew_images(&crew).await) })
-        .buffer_unordered(batch_size)
-        .collect::<Vec<_>>()
-        .await;
-
-    for (index, result) in updates {
-        if let Ok(path) = result {
-            movie_credits
-                .set_crew_image(index, &path)
-                .map_err(|e| {
-                    tracing::error!(
-                        "Failed to set crew image for path: {} \n Caused by {:?}",
-                        path,
-                        e
-                    );
-                })
-                .ok();
-        }
-    }
-    Ok(())
+    tracing::debug!("Credits posters downloaded");
 }
 // endregion
 

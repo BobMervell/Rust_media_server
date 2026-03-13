@@ -16,7 +16,7 @@ class CastScroller extends StatelessWidget {
   Widget build(BuildContext context) {
     double height = MediaQuery.of(context).size.height / 2;
 
-    return FutureBuilder<List<PersonData>>(
+    return FutureBuilder<List<PersonSnapshot>>(
       future: getMediaCast(mediaId: mediaId),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
@@ -67,7 +67,7 @@ class CastScrollView extends StatelessWidget {
     required this.textColor,
   });
 
-  final List<PersonData> cast;
+  final List<PersonSnapshot> cast;
   final double height;
   final Color textColor;
 
