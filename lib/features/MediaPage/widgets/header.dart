@@ -34,7 +34,6 @@ class Header extends StatelessWidget {
           child: TitleArea(media: media, textColor: textColor),
         ),
 
-        /// Floating Back Button
         Positioned(
           top: MediaQuery.of(context).padding.top + 12,
           left: 12,

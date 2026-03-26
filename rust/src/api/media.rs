@@ -2,6 +2,7 @@ pub use crate::movie_data::movie_data::{MediaData, MovieSnapshot, PersonData}; /
 use crate::{
     db_interface::data_getter::DataGetter,
     media_retriever::media_retriever::retrieve_media,
+    movie_data::movie_data::PersonSnapshot,
     smb_mounter::smb_mounter::{mount_smb, unmount_smb},
 };
 use anyhow::{Context, Result};
@@ -46,15 +47,21 @@ pub fn get_media(media_id: i64) -> Result<MediaData> {
 }
 
 #[flutter_rust_bridge::frb]
-pub fn get_media_cast(media_id: i64) -> Result<Vec<PersonData>> {
+pub fn get_media_cast(media_id: i64) -> Result<Vec<PersonSnapshot>> {
     let data_getter = DataGetter::new("movie_db.db".to_owned())?;
     return data_getter.get_media_cast(media_id);
 }
 
 #[flutter_rust_bridge::frb]
-pub fn get_media_crew(media_id: i64) -> Result<Vec<PersonData>> {
+pub fn get_media_crew(media_id: i64) -> Result<Vec<PersonSnapshot>> {
     let data_getter = DataGetter::new("movie_db.db".to_owned())?;
     return data_getter.get_media_crew(media_id);
+}
+
+#[flutter_rust_bridge::frb]
+pub fn get_person(person_tmdb_id: i64) -> Result<PersonData> {
+    let data_getter = DataGetter::new("movie_db.db".to_owned())?;
+    return data_getter.get_person_data(person_tmdb_id);
 }
 
 #[flutter_rust_bridge::frb]

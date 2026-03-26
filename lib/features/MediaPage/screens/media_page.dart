@@ -45,7 +45,11 @@ class MediaPage extends StatelessWidget {
                 mediaId: mediaId,
               ),
               SliverToBoxAdapter(child: SizedBox(height: 40)),
-              CrewScroller(mediaId: mediaId, textColor: textColor),
+              CrewScroller(
+                mediaId: mediaId,
+                textColor: textColor,
+                backgroundColor: dominantColor,
+              ),
               SliverToBoxAdapter(child: SizedBox(height: 100)),
             ],
           ),
@@ -83,7 +87,11 @@ class HeaderCastWrapper extends StatelessWidget {
             ),
             Align(
               alignment: AlignmentGeometry.bottomRight,
-              child: CastScroller(mediaId: mediaId, textColor: textColor),
+              child: CastScroller(
+                mediaId: mediaId,
+                textColor: textColor,
+                backgroundColor: backgroundColor,
+              ),
             ),
           ],
         ),

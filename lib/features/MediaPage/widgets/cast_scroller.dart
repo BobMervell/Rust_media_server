@@ -6,17 +6,20 @@ import 'package:flutter/material.dart';
 class CastScroller extends StatelessWidget {
   final int mediaId;
   final Color textColor;
+  final Color backgroundColor;
+
   const CastScroller({
     super.key,
     required this.mediaId,
     required this.textColor,
+    required this.backgroundColor,
   });
 
   @override
   Widget build(BuildContext context) {
     double height = MediaQuery.of(context).size.height / 2;
 
-    return FutureBuilder<List<PersonData>>(
+    return FutureBuilder<List<PersonSnapshot>>(
       future: getMediaCast(mediaId: mediaId),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
@@ -50,7 +53,12 @@ class CastScroller extends StatelessWidget {
                 height: 40,
                 endIndent: 20,
               ),
-              CastScrollView(cast: cast, height: height, textColor: textColor),
+              CastScrollView(
+                cast: cast,
+                height: height,
+                textColor: textColor,
+                backgroundColor: backgroundColor,
+              ),
             ],
           ),
         );
@@ -65,11 +73,13 @@ class CastScrollView extends StatelessWidget {
     required this.cast,
     required this.height,
     required this.textColor,
+    required this.backgroundColor,
   });
 
-  final List<PersonData> cast;
+  final List<PersonSnapshot> cast;
   final double height;
   final Color textColor;
+  final Color backgroundColor;
 
   @override
   Widget build(BuildContext context) {
@@ -83,6 +93,7 @@ class CastScrollView extends StatelessWidget {
               person: person,
               height: height,
               textColor: textColor,
+              backgroundColor: backgroundColor,
             ),
           );
         }).toList(),

@@ -6,17 +6,20 @@ import 'package:flutter/material.dart';
 class CrewScroller extends StatelessWidget {
   final int mediaId;
   final Color textColor;
+  final Color backgroundColor;
+
   const CrewScroller({
     super.key,
     required this.mediaId,
     required this.textColor,
+    required this.backgroundColor,
   });
 
   @override
   Widget build(BuildContext context) {
     double height = MediaQuery.of(context).size.height / 2;
 
-    return FutureBuilder<List<PersonData>>(
+    return FutureBuilder<List<PersonSnapshot>>(
       future: getMediaCrew(mediaId: mediaId),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
@@ -57,6 +60,7 @@ class CrewScroller extends StatelessWidget {
                   crew: crew,
                   height: height,
                   textColor: textColor,
+                  backgroundColor: backgroundColor,
                 ),
               ],
             ),
@@ -73,11 +77,13 @@ class CrewScrollView extends StatelessWidget {
     required this.crew,
     required this.height,
     required this.textColor,
+    required this.backgroundColor,
   });
 
-  final List<PersonData> crew;
+  final List<PersonSnapshot> crew;
   final double height;
   final Color textColor;
+  final Color backgroundColor;
 
   @override
   Widget build(BuildContext context) {
@@ -91,6 +97,7 @@ class CrewScrollView extends StatelessWidget {
               person: person,
               height: height,
               textColor: textColor,
+              backgroundColor: backgroundColor,
             ),
           );
         }).toList(),

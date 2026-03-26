@@ -67,7 +67,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.11.1';
 
   @override
-  int get rustContentHash => 890826887;
+  int get rustContentHash => 1975334914;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -80,16 +80,20 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
 abstract class RustLibApi extends BaseApi {
   Future<MediaData> crateApiMediaGetMedia({required PlatformInt64 mediaId});
 
-  Future<List<PersonData>> crateApiMediaGetMediaCast({
+  Future<List<PersonSnapshot>> crateApiMediaGetMediaCast({
     required PlatformInt64 mediaId,
   });
 
-  Future<List<PersonData>> crateApiMediaGetMediaCrew({
+  Future<List<PersonSnapshot>> crateApiMediaGetMediaCrew({
     required PlatformInt64 mediaId,
   });
 
   Future<List<MovieSnapshot>> crateApiMediaGetMediaSnapshots({
     required String mediaType,
+  });
+
+  Future<PersonData> crateApiMediaGetPerson({
+    required PlatformInt64 personTmdbId,
   });
 
   Future<void> crateApiMediaInitApp();
@@ -145,7 +149,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "get_media", argNames: ["mediaId"]);
 
   @override
-  Future<List<PersonData>> crateApiMediaGetMediaCast({
+  Future<List<PersonSnapshot>> crateApiMediaGetMediaCast({
     required PlatformInt64 mediaId,
   }) {
     return handler.executeNormal(
@@ -161,7 +165,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_list_person_data,
+          decodeSuccessData: sse_decode_list_person_snapshot,
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta: kCrateApiMediaGetMediaCastConstMeta,
@@ -175,7 +179,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "get_media_cast", argNames: ["mediaId"]);
 
   @override
-  Future<List<PersonData>> crateApiMediaGetMediaCrew({
+  Future<List<PersonSnapshot>> crateApiMediaGetMediaCrew({
     required PlatformInt64 mediaId,
   }) {
     return handler.executeNormal(
@@ -191,7 +195,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_list_person_data,
+          decodeSuccessData: sse_decode_list_person_snapshot,
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta: kCrateApiMediaGetMediaCrewConstMeta,
@@ -238,6 +242,36 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<PersonData> crateApiMediaGetPerson({
+    required PlatformInt64 personTmdbId,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_i_64(personTmdbId, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 5,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_person_data,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta: kCrateApiMediaGetPersonConstMeta,
+        argValues: [personTmdbId],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiMediaGetPersonConstMeta =>
+      const TaskConstMeta(debugName: "get_person", argNames: ["personTmdbId"]);
+
+  @override
   Future<void> crateApiMediaInitApp() {
     return handler.executeNormal(
       NormalTask(
@@ -246,7 +280,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 5,
+            funcId: 6,
             port: port_,
           );
         },
@@ -274,7 +308,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 6,
+            funcId: 7,
             port: port_,
           );
         },
@@ -310,7 +344,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 7,
+            funcId: 8,
             port: port_,
           );
         },
@@ -339,7 +373,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 8,
+            funcId: 9,
             port: port_,
           );
         },
@@ -366,7 +400,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 9,
+            funcId: 10,
             port: port_,
           );
         },
@@ -415,9 +449,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  List<PersonData> dco_decode_list_person_data(dynamic raw) {
+  List<PersonSnapshot> dco_decode_list_person_snapshot(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
-    return (raw as List<dynamic>).map(dco_decode_person_data).toList();
+    return (raw as List<dynamic>).map(dco_decode_person_snapshot).toList();
   }
 
   @protected
@@ -463,12 +497,32 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  String? dco_decode_opt_String(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_String(raw);
+  }
+
+  @protected
   PersonData dco_decode_person_data(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return PersonData(
+      tmdbId: dco_decode_i_64(arr[0]),
+      name: dco_decode_String(arr[1]),
+      summary: dco_decode_String(arr[2]),
+      picturePath: dco_decode_opt_String(arr[3]),
+    );
+  }
+
+  @protected
+  PersonSnapshot dco_decode_person_snapshot(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
     if (arr.length != 5)
       throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
-    return PersonData(
+    return PersonSnapshot(
       tmdbId: dco_decode_i_64(arr[0]),
       name: dco_decode_String(arr[1]),
       character: dco_decode_String(arr[2]),
@@ -530,13 +584,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  List<PersonData> sse_decode_list_person_data(SseDeserializer deserializer) {
+  List<PersonSnapshot> sse_decode_list_person_snapshot(
+    SseDeserializer deserializer,
+  ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
     var len_ = sse_decode_i_32(deserializer);
-    var ans_ = <PersonData>[];
+    var ans_ = <PersonSnapshot>[];
     for (var idx_ = 0; idx_ < len_; ++idx_) {
-      ans_.add(sse_decode_person_data(deserializer));
+      ans_.add(sse_decode_person_snapshot(deserializer));
     }
     return ans_;
   }
@@ -595,14 +651,40 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  String? sse_decode_opt_String(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_String(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
   PersonData sse_decode_person_data(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_tmdbId = sse_decode_i_64(deserializer);
+    var var_name = sse_decode_String(deserializer);
+    var var_summary = sse_decode_String(deserializer);
+    var var_picturePath = sse_decode_opt_String(deserializer);
+    return PersonData(
+      tmdbId: var_tmdbId,
+      name: var_name,
+      summary: var_summary,
+      picturePath: var_picturePath,
+    );
+  }
+
+  @protected
+  PersonSnapshot sse_decode_person_snapshot(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_tmdbId = sse_decode_i_64(deserializer);
     var var_name = sse_decode_String(deserializer);
     var var_character = sse_decode_String(deserializer);
     var var_jobName = sse_decode_String(deserializer);
     var var_picturePath = sse_decode_String(deserializer);
-    return PersonData(
+    return PersonSnapshot(
       tmdbId: var_tmdbId,
       name: var_name,
       character: var_character,
@@ -674,14 +756,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_list_person_data(
-    List<PersonData> self,
+  void sse_encode_list_person_snapshot(
+    List<PersonSnapshot> self,
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_i_32(self.length, serializer);
     for (final item in self) {
-      sse_encode_person_data(item, serializer);
+      sse_encode_person_snapshot(item, serializer);
     }
   }
 
@@ -722,7 +804,29 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_opt_String(String? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_String(self, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_person_data(PersonData self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_64(self.tmdbId, serializer);
+    sse_encode_String(self.name, serializer);
+    sse_encode_String(self.summary, serializer);
+    sse_encode_opt_String(self.picturePath, serializer);
+  }
+
+  @protected
+  void sse_encode_person_snapshot(
+    PersonSnapshot self,
+    SseSerializer serializer,
+  ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_i_64(self.tmdbId, serializer);
     sse_encode_String(self.name, serializer);
