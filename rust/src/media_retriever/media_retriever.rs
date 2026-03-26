@@ -62,7 +62,6 @@ async fn handle_found_movies(
     client: &TMDBClient,
     data_saver: Arc<Mutex<DataSaver>>,
 ) {
-    // let movies = Box::pin(movies);
     movies
         .for_each_concurrent(10, |movie| {
             let data_saver = Arc::clone(&data_saver);
