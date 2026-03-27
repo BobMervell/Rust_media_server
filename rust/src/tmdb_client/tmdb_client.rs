@@ -1,4 +1,5 @@
 use crate::{
+    domain::movie::detailed_movie::{DetailedMovie, MovieDetailResult},
     movie_data::movie_data::{Cast, CreditsMovie, Crew, Genre, MovieData, PersonData},
     os_interface::file_interface::{create_dir, save_image},
 };
@@ -133,11 +134,11 @@ impl TMDBClient {
         &self,
         movie_name: &str,
         movie_year: Option<u32>,
-    ) -> Result<SearchedMovie> {
+    ) -> Result<DetailedMovie> {
         let movie_result = self.fetch_movie_by_name(movie_name, movie_year).await;
 
         match movie_result {
-            Ok(fetch_result) if !fetch_result.results.is_empty() => {
+            Ok(fetch_result) if !fetch_result.results().is_empty() => {
                 Ok(self.get_most_popular(fetch_result))
             }
             Ok(_) => Err(anyhow!(
@@ -160,7 +161,7 @@ impl TMDBClient {
         &self,
         movie_name: &str,
         movie_year: Option<u32>,
-    ) -> Result<MovieSearchResult> {
+    ) -> Result<MovieDetailResult> {
         let params = SearchParams {
             query: movie_name,
             language: "en-US",
@@ -191,7 +192,7 @@ impl TMDBClient {
             })?;
 
         let movie = response
-            .json::<MovieSearchResult>()
+            .json::<MovieDetailResult>()
             .await
             .with_context(|| {
                 format!(
@@ -202,12 +203,12 @@ impl TMDBClient {
         Ok(movie)
     }
 
-    fn get_most_popular(&self, fetch_result: MovieSearchResult) -> SearchedMovie {
+    fn get_most_popular(&self, fetch_result: MovieDetailResult) -> DetailedMovie {
         let mut max_pop: f32 = 0.0;
-        let mut result_movie = fetch_result.results[0].clone();
+        let mut result_movie = fetch_result.results()[0].clone();
         for movie in fetch_result.iter() {
-            if movie.popularity > max_pop {
-                max_pop = movie.popularity;
+            if movie.popularity() > max_pop {
+                max_pop = movie.popularity();
                 result_movie = movie.to_owned();
             }
         }

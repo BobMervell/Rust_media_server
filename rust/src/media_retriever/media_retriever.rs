@@ -190,14 +190,14 @@ async fn update_movie_basics(movie: &mut MovieData, client: &TMDBClient) -> Resu
         })?;
 
     movie
-        .set_tmdb_id(movie_basics.id())
+        .set_tmdb_id(movie_basics.tmdb_id())
         .set_original_title(movie_basics.original_title())
         .set_title(movie_basics.title())
         .set_vote_average(movie_basics.vote_average())
         .set_release_date(movie_basics.release_date())
         .set_summary(movie_basics.overview())
-        .set_poster(movie_basics.poster_path().to_owned())
-        .set_backdrop(movie_basics.backdrop_path().to_owned());
+        .set_poster(movie_basics.poster().to_owned())
+        .set_backdrop(movie_basics.backdrop().to_owned());
 
     Ok(())
 }

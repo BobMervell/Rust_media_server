@@ -2,10 +2,10 @@ use anyhow::{anyhow, Result};
 
 #[derive(Debug, Clone)]
 pub struct ParsedMovie {
-    pub file_path: String,
-    pub file_optional_info: String,
-    pub file_title: String,
-    pub file_year: String,
+    file_path: String,
+    file_optional_info: String,
+    file_title: String,
+    file_year: String,
 }
 
 impl ParsedMovie {

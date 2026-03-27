@@ -1,6 +1,6 @@
 #[derive(Debug, Clone)]
 pub struct RawEntry {
-    pub file_path: String,
+    file_path: String,
 }
 
 impl RawEntry {
