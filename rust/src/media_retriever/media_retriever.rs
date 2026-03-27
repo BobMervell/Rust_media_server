@@ -4,6 +4,10 @@ use std::sync::Arc;
 use crate::{
     db_interface::data_saver::DataSaver,
     directory_explorer::smb_explorer::SmbExplorer,
+    domain::movie::{
+        parsed_movie::{self, ParsedMovie},
+        raw_entry::RawEntry,
+    },
     movie_data::movie_data::{CreditsMovie, MovieData, PersonData},
     tmdb_client::tmdb_client::TMDBClient,
 };
@@ -56,21 +60,33 @@ fn initiate_db() -> Result<DataSaver> {
 
 // region: ---- UPDATE MOVIE DATA ----
 
+fn tempo_parse_entries(
+    entries: impl Stream<Item = Result<RawEntry, Error>>,
+) -> impl Stream<Item = Result<ParsedMovie, Error>> {
+    entries.map(|entry| entry.and_then(|e| ParsedMovie::new(e.file_path())))
+}
+
 /// Wrapper for the concurent movie handling pipeline
 async fn handle_found_movies(
-    movies: impl Stream<Item = Result<MovieData, Error>>,
+    entries: impl Stream<Item = Result<RawEntry, Error>>,
     client: &TMDBClient,
     data_saver: Arc<Mutex<DataSaver>>,
 ) {
-    movies
-        .for_each_concurrent(10, |movie| {
+    let parsed_movies = tempo_parse_entries(entries);
+
+    parsed_movies
+        .for_each_concurrent(10, |parsed_movie| {
             let data_saver = Arc::clone(&data_saver);
             let client = client;
             async move {
-                match movie {
-                    Ok(mut movie) => {
+                match parsed_movie {
+                    Ok(parsed_movie) => {
+                        let mut movie = MovieData::new(parsed_movie.file_path()).unwrap();
+                        movie.set_file_title(parsed_movie.file_title());
+                        movie.set_file_year(parsed_movie.file_year());
+                        movie.set_file_optional_info(parsed_movie.file_optional_info());
+
                         let credits = fetch_movie_data(&mut movie, &client).await;
-                        update_movie_posters(&mut movie, &client).await;
 
                         let mut persons = get_persons_details(&credits, &client).await;
 

@@ -1,4 +1,4 @@
-use crate::movie_data::movie_data::MovieData;
+use crate::{domain::movie::raw_entry::RawEntry, movie_data::movie_data::MovieData};
 use anyhow::{anyhow, Context, Result};
 use async_stream::stream;
 use smb::{
@@ -37,7 +37,7 @@ impl SmbExplorer {
     ///
     /// Traverses each subfolder, yielding a MovieData object for every video file
     /// whose file is not inside a featurette folder. The MovieData is constructed from the file name.
-    pub fn fetch_movies<'a>(&'a self, path: &'a str) -> impl Stream<Item = Result<MovieData>> + 'a {
+    pub fn fetch_movies<'a>(&'a self, path: &'a str) -> impl Stream<Item = Result<RawEntry>> + 'a {
         let span = debug_span!("fetch_movies", path = path);
         let _enter = span.enter();
 
@@ -57,30 +57,16 @@ impl SmbExplorer {
                     if ! is_valid {
                         continue;
                     }
-
                     let mut more_movies = Box::pin(self.fetch_movies(&sub_path));
                     while let Some(movie) = more_movies.next().await {
                         yield movie
                     }
-
                 } else {
-
                     let file_path = self.parse_file_path(&entry, path);
                     if !self.is_video_file(&entry.file_name.to_string()) || !self.is_not_featurette(&path) {
                         continue;
                      }
-
-                     match  MovieData::new(&file_path) {
-                            Ok(movie) => {
-                                tracing::debug!(file_path = file_path, success = true, "Movie found");
-                                yield Ok(movie);
-                            }
-                            Err(e) => {
-                                tracing::error!(file_path = file_path, success = false, error = ?e, "Movie found but failed");
-                                yield Err(e);
-                            }
-                        }
-
+                        yield(Ok(RawEntry::new(&file_path)))
                 }
             }
         }
