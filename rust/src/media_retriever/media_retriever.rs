@@ -5,6 +5,8 @@ use crate::{
     db_interface::data_saver::DataSaver,
     directory_explorer::smb_explorer::SmbExplorer,
     domain::movie::{
+        complete_movie::{self, CompleteMovie},
+        detailed_movie::DetailedMovie,
         parsed_movie::{self, ParsedMovie},
         raw_entry::RawEntry,
     },
@@ -80,13 +82,13 @@ async fn handle_found_movies(
             let client = client;
             async move {
                 match parsed_movie {
-                    Ok(parsed_movie) => {
+                    Ok(mut parsed_movie) => {
                         let mut movie = MovieData::new(parsed_movie.file_path()).unwrap();
                         movie.set_file_title(parsed_movie.file_title());
                         movie.set_file_year(parsed_movie.file_year());
                         movie.set_file_optional_info(parsed_movie.file_optional_info());
 
-                        let credits = fetch_movie_data(&mut movie, &client).await;
+                        let credits = fetch_movie_data(&mut parsed_movie, &client).await;
 
                         let mut persons = get_persons_details(&credits, &client).await;
 
@@ -124,11 +126,11 @@ async fn handle_found_movies(
 }
 
 /// Fetches movie metadata, including basic information, genres, and credits.
-async fn fetch_movie_data(movie: &mut MovieData, client: &TMDBClient) -> CreditsMovie {
+async fn fetch_movie_data(movie: &mut ParsedMovie, client: &TMDBClient) -> CreditsMovie {
     let span = debug_span!("fetch_movie_data", movie_path = movie.file_path());
     let _enter = span.enter();
 
-    update_movie_basics(movie, client)
+    let detailed_movie = update_movie_basics(movie, client)
         .await
         .map_err(|e| {
             tracing::error!(
@@ -137,9 +139,9 @@ async fn fetch_movie_data(movie: &mut MovieData, client: &TMDBClient) -> Credits
                 e
             );
         })
-        .ok();
+        .unwrap();
 
-    update_movie_genres(movie, client)
+    let complete_movie = update_movie_genres(detailed_movie, client)
         .await
         .map_err(|e| {
             tracing::error!(
@@ -148,7 +150,7 @@ async fn fetch_movie_data(movie: &mut MovieData, client: &TMDBClient) -> Credits
                 e
             );
         })
-        .ok();
+        .unwrap();
 
     tracing::debug!(
         file_path = movie.file_path(),
@@ -156,7 +158,7 @@ async fn fetch_movie_data(movie: &mut MovieData, client: &TMDBClient) -> Credits
         "Movie data received"
     );
 
-    match get_movie_credits(movie, client).await {
+    match get_movie_credits(&complete_movie, client).await {
         Ok(mut credits) => {
             filter_credits(&mut credits);
             tracing::debug!(
@@ -178,7 +180,10 @@ async fn fetch_movie_data(movie: &mut MovieData, client: &TMDBClient) -> Credits
 }
 
 /// Retrieves and updates the basic metadata for a movie.
-async fn update_movie_basics(movie: &mut MovieData, client: &TMDBClient) -> Result<()> {
+async fn update_movie_basics(
+    movie: &mut ParsedMovie,
+    client: &TMDBClient,
+) -> Result<DetailedMovie> {
     let movie_basics = client
         .get_movie_info(movie.file_title(), movie.file_year().parse::<u32>().ok())
         .await
@@ -188,39 +193,29 @@ async fn update_movie_basics(movie: &mut MovieData, client: &TMDBClient) -> Resu
                 movie.file_path()
             )
         })?;
-
-    movie
-        .set_tmdb_id(movie_basics.tmdb_id())
-        .set_original_title(movie_basics.original_title())
-        .set_title(movie_basics.title())
-        .set_vote_average(movie_basics.vote_average())
-        .set_release_date(movie_basics.release_date())
-        .set_summary(movie_basics.overview())
-        .set_poster(movie_basics.poster().to_owned())
-        .set_backdrop(movie_basics.backdrop().to_owned());
-
-    Ok(())
+    Ok(movie_basics)
 }
 
 /// Retrieves and updates the genres for a movie.
-async fn update_movie_genres(movie: &mut MovieData, client: &TMDBClient) -> Result<()> {
-    movie.set_genres(
+async fn update_movie_genres(movie: DetailedMovie, client: &TMDBClient) -> Result<CompleteMovie> {
+    let mut complete_movie = CompleteMovie::new(movie);
+    complete_movie.set_genres(
         client
-            .fetch_movie_genres(movie.tmdb_id())
+            .fetch_movie_genres(complete_movie.tmdb_id())
             .await
             .with_context(|| {
                 format!(
                     "Failed to get movie genres info for file: {}",
-                    movie.file_path()
+                    complete_movie.file_path()
                 )
             })?
             .genres(),
     );
-    Ok(())
+    Ok(complete_movie)
 }
 
 /// Retrieves and updates the credits for a movie.
-async fn get_movie_credits(movie: &mut MovieData, client: &TMDBClient) -> Result<CreditsMovie> {
+async fn get_movie_credits(movie: &CompleteMovie, client: &TMDBClient) -> Result<CreditsMovie> {
     let movie_credits = client
         .fetch_movie_credits(movie.tmdb_id())
         .await
