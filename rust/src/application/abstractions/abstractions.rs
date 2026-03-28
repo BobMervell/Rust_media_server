@@ -1,7 +1,9 @@
 use anyhow::Result;
 use trpl::Stream;
 
-use crate::domain::movie::{parsed_movie::ParsedMovie, raw_entry::RawEntry};
+use crate::domain::movie::{
+    detailed_movie::DetailedMovie, parsed_movie::ParsedMovie, raw_entry::RawEntry,
+};
 
 pub trait FileExplorer {
     fn get_entries<'a>(&'a self, path: &'a str) -> impl Stream<Item = Result<RawEntry>> + 'a;
@@ -15,7 +17,10 @@ pub trait MoviesParser {
 }
 
 pub trait MovieDetailsFetcher {
-    fn new(&self) -> Self;
+    fn get_details(
+        &self,
+        parsed_movies: impl Stream<Item = Result<ParsedMovie>>,
+    ) -> impl Stream<Item = Result<DetailedMovie>>;
 }
 
 pub trait MovieRepository {

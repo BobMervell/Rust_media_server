@@ -1,36 +1,39 @@
-use crate::application::abstractions::abstractions::{
-    FileExplorer, MovieDetailsFetcher, MovieRepository, MoviesParser,
+use crate::{
+    application::abstractions::abstractions::{
+        FileExplorer, MovieDetailsFetcher, MovieRepository, MoviesParser,
+    },
+    domain::movie::detailed_movie,
 };
 
 use anyhow::Result;
 use futures::StreamExt;
 
-pub struct MovieIngestionService<E, P /*, D, R*/>
+pub struct MovieIngestionService<E, P, D /*R*/>
 where
     E: FileExplorer,
     P: MoviesParser,
-    /*D: MovieDetailsFetcher,
-    R: MovieRepository,*/
+    D: MovieDetailsFetcher,
+    // R: MovieRepository,
 {
     explorer: E,
     parser: P,
-    /*details_fetcher: D,
-    repository: R,*/
+    details_fetcher: D,
+    // repository: R,
 }
 
-impl<E, P /*, D, R*/> MovieIngestionService<E, P /*, D, R*/>
+impl<E, P, D /*R*/> MovieIngestionService<E, P, D /*R*/>
 where
     E: FileExplorer,
     P: MoviesParser,
-    /*D: MovieDetailsFetcher,
-    R: MovieRepository,*/
+    D: MovieDetailsFetcher,
+    // R: MovieRepository,
 {
-    pub fn new(explorer: E, parser: P /*details_fetcher: D, repository: R*/) -> Self {
+    pub fn new(explorer: E, parser: P, details_fetcher: D /*repository: R*/) -> Self {
         Self {
             explorer,
             parser,
-            /*etails_fetcher,
-            repository,*/
+            details_fetcher,
+            // repository,
         }
     }
 
@@ -38,8 +41,9 @@ where
         let path = "";
 
         let entries = self.explorer.get_entries(path);
-        let mut parsed_movies = Box::pin(self.parser.get_movies(entries));
-        while let Some(movie) = parsed_movies.next().await {
+        let parsed_movies = self.parser.get_movies(entries);
+        let mut detailed_movie = Box::pin(self.details_fetcher.get_details(parsed_movies));
+        while let Some(movie) = detailed_movie.next().await {
             println!("{:?}", movie);
         }
 

@@ -3,7 +3,10 @@ use crate::{
     application::systems::movie_ingestion_service::MovieIngestionService,
     db_interface::data_getter::DataGetter,
     domain::services::movie_parser::MovieNameParser,
-    infrastructure::file_explorers_infra::smb_explorer::SmbExplorer,
+    infrastructure::{
+        api_infra::tmdb_movie_details::TMDBMovieDetailer,
+        file_explorers_infra::smb_explorer::SmbExplorer,
+    },
     movie_data::movie_data::PersonSnapshot,
     smb_mounter::smb_mounter::{mount_smb, unmount_smb},
 };
@@ -42,7 +45,8 @@ pub async fn start(path: &str, username: &str, password: &str, token: &str) -> S
         .await
         .unwrap();
     let parser = MovieNameParser {};
-    let test = MovieIngestionService::new(explorer, parser);
+    let details_fetcher = TMDBMovieDetailer::new(token).unwrap();
+    let test = MovieIngestionService::new(explorer, parser, details_fetcher);
     let truc = test.ingest_movies().await;
     // let res = retrieve_media(path, username, password, token).await;
     tracing::info!("Hello,!");

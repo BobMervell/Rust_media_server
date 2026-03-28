@@ -37,6 +37,21 @@ pub struct DetailedMovie {
 }
 
 impl DetailedMovie {
+    pub fn set_file_path(mut self, value: &str) -> Self {
+        self.file_path = value.to_owned();
+        self
+    }
+
+    pub fn set_file_title(mut self, value: &str) -> Self {
+        self.file_title = value.to_owned();
+        self
+    }
+
+    pub fn set_file_optional_info(mut self, value: &str) -> Self {
+        self.file_optional_info = value.to_owned();
+        self
+    }
+
     pub fn file_path(&self) -> &str {
         &self.file_path
     }
