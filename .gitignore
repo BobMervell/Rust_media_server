@@ -60,3 +60,4 @@ app.*.map.json
 images/
 
 movie_db.db-journal
+/rust/src/bin/
