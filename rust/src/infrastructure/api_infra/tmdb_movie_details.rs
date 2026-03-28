@@ -12,6 +12,7 @@ use crate::{
     domain::movie::{
         detailed_movie::{DetailedMovie, MovieDetailResult},
         parsed_movie::ParsedMovie,
+        value_objects::{Genre, MovieGenres},
     },
 };
 
@@ -29,25 +30,27 @@ impl MovieDetailsFetcher for TMDBMovieDetailer {
         let detailed_movies = parsed_movies.and_then(|parsed_movie| {
             let client = self.client.clone();
             async move {
-                let movies_result =
-                    Self::fetch_movie(client, parsed_movie.file_title(), parsed_movie.file_year())
-                        .await;
+                let mut movie = Self::get_movie_basics(&parsed_movie, &client)
+                    .await
+                    .with_context(|| {
+                        format!(
+                            "Failed to get search response for movie: {} ({}).",
+                            parsed_movie.file_title(),
+                            parsed_movie.file_year()
+                        )
+                    })?;
 
-                match movies_result {
-                    Ok(movies) => {
-                        let movie = Self::get_most_popular(movies);
-                        Ok(movie
-                            .set_file_path(parsed_movie.file_path())
-                            .set_file_title(parsed_movie.file_title())
-                            .set_file_optional_info(parsed_movie.file_optional_info()))
-                    }
-                    Err(e) => Err(anyhow!(
-                        "Failed to fetch movie: {} ({}). \n Caused by {:?}",
-                        parsed_movie.file_title(),
-                        parsed_movie.file_year(),
-                        e
-                    )),
-                }
+                let genres = Self::fetch_movie_genres(&client, movie.tmdb_id())
+                    .await
+                    .with_context(|| {
+                        format!(
+                            "Failed to get movie genre on tmbd for: {} ({}).",
+                            parsed_movie.file_title(),
+                            parsed_movie.file_year()
+                        )
+                    })?;
+                movie.set_genre(&genres);
+                Ok(movie)
             }
         });
         return detailed_movies;
@@ -73,9 +76,37 @@ impl TMDBMovieDetailer {
         Ok(Self { client: client })
     }
 
+    async fn get_movie_basics(
+        parsed_movie: &ParsedMovie,
+        client: &Client,
+    ) -> Result<DetailedMovie> {
+        let movies_result = Self::fetch_corresponding_movies(
+            client,
+            parsed_movie.file_title(),
+            parsed_movie.file_year(),
+        )
+        .await;
+
+        match movies_result {
+            Ok(movies) => {
+                let movie = Self::get_most_popular(movies);
+                Ok(movie
+                    .set_file_path(parsed_movie.file_path())
+                    .set_file_title(parsed_movie.file_title())
+                    .set_file_optional_info(parsed_movie.file_optional_info()))
+            }
+            Err(e) => Err(anyhow!(
+                "Failed to fetch movie: {} ({}). \n Caused by {:?}",
+                parsed_movie.file_title(),
+                parsed_movie.file_year(),
+                e
+            )),
+        }
+    }
+
     /// Fetches movie information from the TMDB API by name and year, returning the result.
-    async fn fetch_movie(
-        client: Client,
+    async fn fetch_corresponding_movies(
+        client: &Client,
         movie_name: &str,
         movie_year: &str,
     ) -> Result<MovieDetailResult> {
@@ -124,5 +155,36 @@ impl TMDBMovieDetailer {
             }
         }
         return result_movie;
+    }
+
+    /// Fetches movie genres from the TMDB API by tmdbId.
+    pub async fn fetch_movie_genres(client: &Client, tmdb_id: i64) -> Result<MovieGenres> {
+        let url = format!("{}/movie/{}?language=en-US", TMDB_BASE_URL, &tmdb_id);
+
+        let response = client
+            .get(&url)
+            .send()
+            .await
+            .with_context(|| {
+                format!(
+                    "Failed to get genre response for movie id: {} , from url: {}",
+                    tmdb_id, &url
+                )
+            })?
+            .error_for_status()
+            .with_context(|| {
+                format!(
+                    "TMDB returned error status for movie id: {} , from url: {}",
+                    tmdb_id, &url
+                )
+            })?;
+
+        let genres = response.json::<MovieGenres>().await.with_context(|| {
+            format!(
+                "Failed to deserialize genre response for movie id: {}, from url: {}",
+                tmdb_id, &url
+            )
+        })?;
+        Ok(genres)
     }
 }

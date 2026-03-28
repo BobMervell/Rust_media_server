@@ -1,5 +1,7 @@
 use serde::Deserialize;
 
+use crate::domain::movie::value_objects::{Genre, MovieGenres};
+
 #[derive(Deserialize, Debug)]
 pub struct MovieDetailResult {
     results: Vec<DetailedMovie>,
@@ -28,6 +30,8 @@ pub struct DetailedMovie {
     original_title: String,
     title: String,
     genre_ids: Vec<i64>,
+    #[serde(skip_deserializing)]
+    genre: MovieGenres,
     popularity: f32,
     vote_average: f32,
     release_date: String,
@@ -50,6 +54,9 @@ impl DetailedMovie {
     pub fn set_file_optional_info(mut self, value: &str) -> Self {
         self.file_optional_info = value.to_owned();
         self
+    }
+    pub fn set_genre(&mut self, value: &MovieGenres) {
+        self.genre = value.to_owned();
     }
 
     pub fn file_path(&self) -> &str {
@@ -78,6 +85,10 @@ impl DetailedMovie {
 
     pub fn genre_ids(&self) -> &[i64] {
         &self.genre_ids
+    }
+
+    pub fn genre(&self) -> MovieGenres {
+        self.genre.clone()
     }
 
     pub fn popularity(&self) -> f32 {
