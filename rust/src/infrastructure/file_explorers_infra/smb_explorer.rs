@@ -13,6 +13,7 @@ use trpl::{Stream, StreamExt};
 
 pub struct SmbExplorer {
     tree: Arc<smb::Tree>,
+    root_path: String,
 }
 
 impl FileExplorer for SmbExplorer {
@@ -75,7 +76,10 @@ impl SmbExplorer {
             .await
             .with_context(|| format!("Failed to retrieve directory from remote: {}", &path))?;
 
-        Ok(Self { tree: tree })
+        Ok(Self {
+            tree: tree,
+            root_path: path,
+        })
     }
 
     async fn read_directory(&self, path: &str) -> Result<Arc<Directory>> {
@@ -114,9 +118,10 @@ impl SmbExplorer {
     ) -> (String, String) {
         if path.is_empty() {
             let file_name = file_entry.file_name.to_string();
-            return (file_name.clone(), file_name);
+            let file_path = format!("{}/{}", self.root_path, file_name);
+            return (file_path, file_name);
         } else {
-            let file_path = format!("{}/{}", path, file_entry.file_name);
+            let file_path = format!("{}/{}/{}", self.root_path, path, file_entry.file_name);
             let file_name = file_entry.file_name.to_string();
             return (file_path, file_name);
         };
