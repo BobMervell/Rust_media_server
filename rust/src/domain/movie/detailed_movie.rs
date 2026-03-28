@@ -32,8 +32,8 @@ pub struct DetailedMovie {
     vote_average: f32,
     release_date: String,
     overview: String,
-    poster: Option<String>,
-    backdrop: Option<String>,
+    poster_path: Option<String>,
+    backdrop_path: Option<String>,
 }
 
 impl DetailedMovie {
@@ -96,11 +96,11 @@ impl DetailedMovie {
         &self.overview
     }
 
-    pub fn poster(&self) -> Option<String> {
-        self.poster.to_owned()
+    pub fn poster_path(&self) -> Option<String> {
+        self.poster_path.to_owned()
     }
 
-    pub fn backdrop(&self) -> Option<String> {
-        self.backdrop.to_owned()
+    pub fn backdrop_path(&self) -> Option<String> {
+        self.backdrop_path.to_owned()
     }
 }
