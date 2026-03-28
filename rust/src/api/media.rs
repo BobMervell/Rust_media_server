@@ -1,7 +1,8 @@
 pub use crate::movie_data::movie_data::{MediaData, MovieSnapshot, PersonData}; //expose for dart
 use crate::{
+    application::systems::movie_ingestion_service::MovieIngestionService,
     db_interface::data_getter::DataGetter,
-    media_retriever::media_retriever::retrieve_media,
+    infrastructure::file_explorers_infra::smb_explorer::SmbExplorer,
     movie_data::movie_data::PersonSnapshot,
     smb_mounter::smb_mounter::{mount_smb, unmount_smb},
 };
@@ -27,11 +28,23 @@ fn init_tracing_subscriber() {
     tracing_log::LogTracer::init().ok();
 }
 
+// #[flutter_rust_bridge::frb]
+// pub async fn start(path: &str, username: &str, password: &str, token: &str) -> String {
+//     let res = retrieve_media(path, username, password, token).await;
+//     tracing::info!("Hello, {:?}!", res);
+// }
+
 #[flutter_rust_bridge::frb]
 pub async fn start(path: &str, username: &str, password: &str, token: &str) -> String {
-    let res = retrieve_media(path, username, password, token).await;
-    tracing::info!("Hello, {:?}!", res);
-    format!("Hello, {:?}!", res)
+    println!("startinf");
+    let explorer = SmbExplorer::new(path.to_owned(), username.to_owned(), password.to_owned())
+        .await
+        .unwrap();
+    let test = MovieIngestionService::new(explorer);
+    let truc = test.ingest_movies().await;
+    // let res = retrieve_media(path, username, password, token).await;
+    tracing::info!("Hello,!");
+    format!("Hello!")
 }
 
 #[flutter_rust_bridge::frb]
