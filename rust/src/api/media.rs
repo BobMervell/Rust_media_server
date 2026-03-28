@@ -1,11 +1,17 @@
 pub use crate::movie_data::movie_data::{MediaData, MovieSnapshot, PersonData}; //expose for dart
 use crate::{
-    application::systems::movie_ingestion_service::MovieIngestionService,
+    application::{
+        abstractions::abstractions::MoviesImagesFetcher,
+        systems::movie_ingestion_service::MovieIngestionService,
+    },
     db_interface::data_getter::DataGetter,
     domain::services::movie_parser::MovieNameParser,
     infrastructure::{
-        api_infra::tmdb_movie_details::TMDBMovieDetailer,
         file_explorers_infra::smb_explorer::SmbExplorer,
+        tmdb_api_infra::{
+            tmdb_movie_details::TMDBMoviesDetailsFetcher,
+            tmdb_movie_posters::TMDBMoviesImagesFetcher,
+        },
     },
     movie_data::movie_data::PersonSnapshot,
     smb_mounter::smb_mounter::{mount_smb, unmount_smb},
@@ -45,8 +51,9 @@ pub async fn start(path: &str, username: &str, password: &str, token: &str) -> S
         .await
         .unwrap();
     let parser = MovieNameParser {};
-    let details_fetcher = TMDBMovieDetailer::new(token).unwrap();
-    let test = MovieIngestionService::new(explorer, parser, details_fetcher);
+    let details_fetcher = TMDBMoviesDetailsFetcher::new(token).unwrap();
+    let image_fetcher = TMDBMoviesImagesFetcher::new(token).unwrap();
+    let test = MovieIngestionService::new(explorer, parser, details_fetcher, image_fetcher);
     let truc = test.ingest_movies().await;
     // let res = retrieve_media(path, username, password, token).await;
     tracing::info!("Hello,!");

@@ -8,21 +8,21 @@ use reqwest::{
 use trpl::Stream;
 
 use crate::{
-    application::abstractions::abstractions::MovieDetailsFetcher,
+    application::abstractions::abstractions::MoviesDetailsFetcher,
     domain::movie::{
         detailed_movie::{DetailedMovie, MovieDetailResult},
         parsed_movie::ParsedMovie,
-        value_objects::{Genre, MovieGenres},
+        value_objects::MovieGenres,
     },
 };
 
 const TMDB_BASE_URL: &str = "https://api.themoviedb.org/3";
 
-pub struct TMDBMovieDetailer {
+pub struct TMDBMoviesDetailsFetcher {
     client: Client,
 }
 
-impl MovieDetailsFetcher for TMDBMovieDetailer {
+impl MoviesDetailsFetcher for TMDBMoviesDetailsFetcher {
     fn get_details(
         &self,
         parsed_movies: impl Stream<Item = Result<ParsedMovie>>,
@@ -57,7 +57,7 @@ impl MovieDetailsFetcher for TMDBMovieDetailer {
     }
 }
 
-impl TMDBMovieDetailer {
+impl TMDBMoviesDetailsFetcher {
     pub fn new(token: &str) -> Result<Self> {
         let mut headers = HeaderMap::new();
         headers.insert(ACCEPT, HeaderValue::from_static("application/json"));

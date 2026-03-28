@@ -1,7 +1,4 @@
-use crate::{
-    domain::movie::detailed_movie::{self, DetailedMovie},
-    movie_data::movie_data::Genre,
-};
+use crate::{domain::movie::detailed_movie::DetailedMovie, movie_data::movie_data::Genre};
 
 #[derive(Debug, Clone)]
 pub struct CompleteMovie {
@@ -16,12 +13,14 @@ pub struct CompleteMovie {
     vote_average: f32,
     release_date: String,
     summary: String,
-    poster: String,
-    backdrop: String,
+    poster_file_path: String,
+    backdrop_file_path: String,
+    poster_tmdb_path: Option<String>,
+    backdrop_tmdb_path: Option<String>,
 }
 
 impl CompleteMovie {
-    pub fn new(detailed_movie: DetailedMovie) -> Self {
+    pub fn new(detailed_movie: &DetailedMovie, placeholder_path: &str) -> Self {
         Self {
             id: 0,
             file_path: detailed_movie.file_path().to_owned(),
@@ -34,8 +33,10 @@ impl CompleteMovie {
             vote_average: detailed_movie.vote_average(),
             release_date: detailed_movie.release_date().to_owned(),
             summary: detailed_movie.overview().to_owned(),
-            poster: "".to_owned(),
-            backdrop: "".to_owned(),
+            poster_file_path: "".to_owned(),
+            backdrop_file_path: "".to_owned(),
+            poster_tmdb_path: detailed_movie.poster_path(),
+            backdrop_tmdb_path: detailed_movie.backdrop_path(),
         }
     }
 
@@ -83,12 +84,28 @@ impl CompleteMovie {
         &self.summary
     }
 
-    pub fn poster(&self) -> &str {
-        &self.poster
+    pub fn poster_file_path(&self) -> &str {
+        &self.poster_file_path
     }
 
-    pub fn backdrop(&self) -> &str {
-        &self.backdrop
+    pub fn backdrop_file_path(&self) -> &str {
+        &self.backdrop_file_path
+    }
+
+    pub fn poster_tmdb_path(&self) -> Option<&str> {
+        self.poster_tmdb_path.as_deref()
+    }
+
+    pub fn backdrop_tmdb_path(&self) -> Option<&str> {
+        self.backdrop_tmdb_path.as_deref()
+    }
+
+    pub fn set_poster_file_path(&mut self, new_path: String) {
+        self.poster_file_path = new_path
+    }
+
+    pub fn set_backdrop_file_path(&mut self, new_path: String) {
+        self.backdrop_file_path = new_path
     }
 
     pub fn set_genres(&mut self, new_genres: Vec<Genre>) {

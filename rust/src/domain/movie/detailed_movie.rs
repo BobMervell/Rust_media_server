@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use crate::domain::movie::value_objects::{Genre, MovieGenres};
+use crate::domain::movie::value_objects::MovieGenres;
 
 #[derive(Deserialize, Debug)]
 pub struct MovieDetailResult {
