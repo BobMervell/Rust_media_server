@@ -9,8 +9,7 @@ pub struct ParsedMovie {
 }
 
 impl ParsedMovie {
-    pub fn new(file_path: String) -> Result<Self> {
-        let file_name = file_path.rsplit('/').next().unwrap_or(&file_path);
+    pub fn new(file_path: String, file_name: String) -> Result<Self> {
         let file_title;
         let file_year;
         let mut file_optional_info = "";
