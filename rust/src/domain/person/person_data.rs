@@ -7,7 +7,9 @@ pub struct PersonData {
     pub name: String,
     pub biography: String,
     #[serde(rename = "profile_path")]
-    pub picture_path: Option<String>,
+    pub picture_api_path: Option<String>,
+    #[serde(skip_deserializing)]
+    pub picture_file_path: String,
 }
 
 impl PersonData {
@@ -15,13 +17,15 @@ impl PersonData {
         tmdb_id: i64,
         name: String,
         biography: String,
-        picture_path: Option<String>,
+        picture_api_path: Option<String>,
+        picture_file_path: String,
     ) -> Self {
         Self {
             tmdb_id,
             name,
             biography,
-            picture_path,
+            picture_api_path,
+            picture_file_path,
         }
     }
 
@@ -37,11 +41,15 @@ impl PersonData {
         &self.biography
     }
 
-    pub fn picture_path(&self) -> Option<&String> {
-        self.picture_path.as_ref()
+    pub fn picture_api_path(&self) -> Option<String> {
+        self.picture_api_path.to_owned()
     }
 
-    pub fn set_picture_path(&mut self, path: String) {
-        self.picture_path = Some(path)
+    pub fn picture_file_path(&self) -> &str {
+        &self.picture_file_path
+    }
+
+    pub fn set_picture_file_path(&mut self, path: String) {
+        self.picture_file_path = path
     }
 }

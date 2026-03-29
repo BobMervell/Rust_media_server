@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Context, Result};
+use axum::http::response;
 use reqwest::{Client, Response};
 
 use crate::infrastructure::os_infra::file_system::{create_dir, save_image};
@@ -10,6 +11,7 @@ pub async fn fetch_and_store_image(
     name: &str,
     subdir: &str,
     image_size: &str,
+    placeholder_path: &str,
 ) -> Result<String> {
     let (created, file_path) = create_dir(category, subdir, name)
         .with_context(|| format!("Error creating directory for: {}", name))?;
@@ -19,15 +21,19 @@ pub async fn fetch_and_store_image(
         return Ok(file_path);
     }
 
-    let mut response = get_image(client, image_size, picture_path)
-        .await
-        .context("Failed to get image from tmdb")?;
+    match get_image(client, image_size, picture_path).await {
+        Ok(mut image) => {
+            save_image(&mut image, &file_path)
+                .await
+                .with_context(|| format!("Failed to save image for: {}", name))?;
 
-    save_image(&mut response, &file_path)
-        .await
-        .with_context(|| format!("Failed to save image for: {}", name))?;
-
-    return Ok(file_path);
+            return Ok(file_path);
+        }
+        Err(e) => {
+            tracing::debug!("Failed to get image for: {}.\n Caused by {}", name, e);
+            return Ok(placeholder_path.to_owned());
+        }
+    }
 }
 
 async fn get_image(client: &Client, format: &str, picture_path: &str) -> Result<Response> {

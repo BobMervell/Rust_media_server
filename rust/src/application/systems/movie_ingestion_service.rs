@@ -58,6 +58,9 @@ where
             self.images_fetcher
                 .get_images(enriched_movies, placeholder_path),
         );
+        while let Some(movie) = complete_movies.next().await {
+            println!("{:?}", movie);
+        }
 
         Ok(())
     }
