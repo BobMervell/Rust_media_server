@@ -16,7 +16,10 @@ use crate::{
             parsed_movie::ParsedMovie,
             value_objects::MovieGenres,
         },
-        person::{credits::CreditsMovie, person_data::PersonData},
+        person::{
+            credits::{Cast, CreditsMovie, Crew},
+            person_data::PersonData,
+        },
     },
 };
 
@@ -65,6 +68,7 @@ impl MoviesDetailsFetcher for TMDBMoviesDetailsFetcher {
         detailed_movies: impl Stream<Item = Result<DetailedMovie>>,
     ) -> impl Stream<Item = Result<EnrichedMovie>> {
         let enriched_movies = detailed_movies.and_then(|detailed_movie| {
+            println!("{}", detailed_movie.title());
             let client = self.client.clone();
             async move {
                 let credits = Self::fetch_movie_credits(&client, detailed_movie.tmdb_id()).await?;
@@ -283,25 +287,38 @@ impl TMDBMoviesDetailsFetcher {
     }
 
     async fn get_persons_details(credits: &CreditsMovie, client: &Client) -> Vec<PersonData> {
-        let mut person_tmdb_ids: Vec<i64> = credits.cast().iter().map(|c| c.tmdb_id()).collect();
-        let crew_ids: Vec<i64> = credits.crew().iter().map(|c| c.tmdb_id()).collect();
+        let mut person_tmdb_ids: Vec<i64> = credits
+            .cast()
+            .iter()
+            .filter_map(|c| {
+                if !is_credited(c) {
+                    return None;
+                }
+                Some(c.tmdb_id())
+            })
+            .collect();
+        let crew_ids: Vec<i64> = credits
+            .crew()
+            .iter()
+            .filter_map(|c| {
+                if !is_main_crew(c) {
+                    return None;
+                }
+                Some(c.tmdb_id())
+            })
+            .collect();
         person_tmdb_ids.extend(crew_ids);
 
         let batch_size = 200;
 
         let persons = stream::iter(person_tmdb_ids)
             .map(|id| async move {
-                match Self::fetch_person_details(client, id).await {
-                    Ok(person) => Some(person),
-                    Err(e) => {
-                        tracing::error!(
-                            "Failed to get person detail info for person id: {} \n Caused by: {}",
-                            id,
-                            e
-                        );
-                        None
-                    }
-                }
+                Self::fetch_person_details(client, id)
+                    .await
+                    .map_err(|e| {
+                        tracing::error!("Failed for id {}: {}", id, e);
+                    })
+                    .ok()
             })
             .buffer_unordered(batch_size)
             .filter_map(|p| async move { p })
@@ -311,3 +328,95 @@ impl TMDBMoviesDetailsFetcher {
         return persons;
     }
 }
+
+// region: ---- FILTER CREDITS ----
+
+fn is_credited(cast: &Cast) -> bool {
+    return (!cast.character().contains("uncredited"));
+}
+
+fn is_main_crew(crew: &Crew) -> bool {
+    match crew.department() {
+        "Directing" => is_important_directing(crew.job()),
+        "Production" => is_important_production(crew.job()),
+        "Camera" => is_important_camera(crew.job()),
+        "Sound" => is_important_sound(crew.job()),
+        "Visual Effects" => is_important_vfx(crew.job()),
+        "Writing" => is_important_writing(crew.job()),
+        "Art" => is_important_art(crew.job()),
+        "Costume & Make-Up" => is_important_costumes_makeup(crew.job()),
+        _ => false,
+    }
+}
+
+fn is_important_directing(job: &str) -> bool {
+    match job {
+        "Director" => true,
+        "Co-Director" => true,
+        _ => false,
+    }
+}
+
+fn is_important_production(job: &str) -> bool {
+    match job {
+        "Producer" => true,
+        _ => false,
+    }
+}
+
+fn is_important_camera(job: &str) -> bool {
+    match job {
+        "Director of Photography" => true,
+        _ => false,
+    }
+}
+
+fn is_important_sound(job: &str) -> bool {
+    match job {
+        "Original Music Composer" => true,
+        "Sound Designer" => true,
+        _ => false,
+    }
+}
+
+fn is_important_vfx(job: &str) -> bool {
+    match job {
+        "VFX Supervisor" => true,
+        "Visual Effects Supervisor" => true,
+        "Visual Effects Art Director" => true,
+        _ => false,
+    }
+}
+
+fn is_important_writing(job: &str) -> bool {
+    match job {
+        "Writer" => true,
+        "Original Film Writer" => true,
+        "Co-Writer" => true,
+        "Scenario Writer" => true,
+        "Teleplay" => true,
+        "Screenplay" => true,
+        _ => false,
+    }
+}
+
+fn is_important_art(job: &str) -> bool {
+    match job {
+        "Art Direction" => true,
+        "Co-Art Director" => true,
+        "Production Design" => true,
+        "Art Designer" => true,
+        "Set Designer" => true,
+        "Property Master" => true,
+        _ => false,
+    }
+}
+
+fn is_important_costumes_makeup(job: &str) -> bool {
+    match job {
+        "Costume Designer" => true,
+        "Makeup Designer" => true,
+        _ => false,
+    }
+}
+// endregion
