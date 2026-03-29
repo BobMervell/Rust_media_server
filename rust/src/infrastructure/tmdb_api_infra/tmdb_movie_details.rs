@@ -142,6 +142,16 @@ impl TMDBMoviesDetailsFetcher {
                     movie_name, movie_year, &url
                 )
             })?;
+
+        if movies.results().len() == 0 {
+            return Err(anyhow!(
+                "No result foud for for movie: {} ({:?}), from url: {}",
+                movie_name,
+                movie_year,
+                &url
+            ));
+        }
+
         Ok(movies)
     }
 

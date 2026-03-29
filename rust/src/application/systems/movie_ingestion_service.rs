@@ -1,8 +1,5 @@
-use crate::{
-    application::abstractions::abstractions::{
-        FileExplorer, MovieRepository, MoviesDetailsFetcher, MoviesImagesFetcher, MoviesParser,
-    },
-    domain::movie::complete_movie,
+use crate::application::abstractions::abstractions::{
+    FileExplorer, MovieRepository, MoviesDetailsFetcher, MoviesImagesFetcher, MoviesParser,
 };
 
 use anyhow::Result;

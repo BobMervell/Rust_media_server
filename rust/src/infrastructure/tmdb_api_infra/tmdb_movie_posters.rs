@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result};
 use axum::http::{HeaderMap, HeaderValue};
 use futures::TryStreamExt;
 use reqwest::{
@@ -13,8 +13,6 @@ use crate::{
     infrastructure::tmdb_api_infra::utils::fetch_and_store_image,
 };
 
-const TMDB_BASE_URL: &str = "https://api.themoviedb.org/3";
-
 pub struct TMDBMoviesImagesFetcher {
     client: Client,
 }
@@ -27,9 +25,8 @@ impl MoviesImagesFetcher for TMDBMoviesImagesFetcher {
     ) -> impl Stream<Item = Result<CompleteMovie>> {
         let complete_movies = detailed_movies.and_then(move |detailed_movie| {
             let client = self.client.clone();
-            let path = placeholder_path.clone();
             async move {
-                let mut complete_movie = CompleteMovie::new(&detailed_movie, path);
+                let mut complete_movie = CompleteMovie::new(&detailed_movie, placeholder_path);
 
                 let poster_file_path =
                     Self::update_movie_poster(&client, &detailed_movie, placeholder_path).await?;
