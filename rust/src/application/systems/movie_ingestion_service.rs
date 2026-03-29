@@ -59,7 +59,7 @@ where
                 .get_images(enriched_movies, placeholder_path),
         );
         while let Some(movie) = complete_movies.next().await {
-            println!("{:?}", movie);
+            println!("{:?}", movie.unwrap().movie);
         }
 
         Ok(())

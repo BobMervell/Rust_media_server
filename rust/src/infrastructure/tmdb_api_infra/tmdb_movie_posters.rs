@@ -11,7 +11,7 @@ use crate::{
     application::abstractions::abstractions::MoviesImagesFetcher,
     domain::{
         movie::{
-            complete_movie::CompleteMovie,
+            complete_movie::{CompleteEnrichedMovie, CompleteMovie},
             detailed_movie::{DetailedMovie, EnrichedMovie},
         },
         person::person_data::PersonData,
@@ -28,7 +28,7 @@ impl MoviesImagesFetcher for TMDBMoviesImagesFetcher {
         &self,
         detailed_movies: impl Stream<Item = Result<EnrichedMovie>>,
         placeholder_path: &str,
-    ) -> impl Stream<Item = Result<CompleteMovie>> {
+    ) -> impl Stream<Item = Result<CompleteEnrichedMovie>> {
         let complete_movies = detailed_movies.and_then(move |mut detailed_movie| {
             let client = self.client.clone();
             async move {
@@ -51,8 +51,12 @@ impl MoviesImagesFetcher for TMDBMoviesImagesFetcher {
                     placeholder_path,
                 )
                 .await;
-
-                return Ok(complete_movie);
+                let complete_enriched_movie = CompleteEnrichedMovie::new(
+                    complete_movie,
+                    detailed_movie.credits,
+                    detailed_movie.persons,
+                );
+                return Ok(complete_enriched_movie);
             }
         });
         return complete_movies;

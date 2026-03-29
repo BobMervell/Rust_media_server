@@ -1,4 +1,25 @@
-use crate::{domain::movie::detailed_movie::DetailedMovie, movie_data::movie_data::Genre};
+use crate::{
+    domain::{
+        movie::detailed_movie::DetailedMovie,
+        person::{credits::CreditsMovie, person_data::PersonData},
+    },
+    movie_data::movie_data::Genre,
+};
+
+pub struct CompleteEnrichedMovie {
+    pub movie: CompleteMovie,
+    pub credits: CreditsMovie,
+    pub persons: Vec<PersonData>,
+}
+impl CompleteEnrichedMovie {
+    pub fn new(movie: CompleteMovie, credits: CreditsMovie, persons: Vec<PersonData>) -> Self {
+        Self {
+            movie,
+            credits,
+            persons,
+        }
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct CompleteMovie {

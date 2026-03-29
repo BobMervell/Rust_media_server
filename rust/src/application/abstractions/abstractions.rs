@@ -3,7 +3,7 @@ use trpl::Stream;
 
 use crate::domain::{
     movie::{
-        complete_movie::CompleteMovie,
+        complete_movie::{CompleteEnrichedMovie, CompleteMovie},
         detailed_movie::{self, DetailedMovie, EnrichedMovie},
         parsed_movie::ParsedMovie,
         raw_entry::RawEntry,
@@ -39,7 +39,7 @@ pub trait MoviesImagesFetcher {
         &self,
         detailed_movies: impl Stream<Item = Result<EnrichedMovie>>,
         placeholder_path: &str,
-    ) -> impl Stream<Item = Result<CompleteMovie>>;
+    ) -> impl Stream<Item = Result<CompleteEnrichedMovie>>;
 }
 
 pub trait MovieRepository {
