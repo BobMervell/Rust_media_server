@@ -9,7 +9,10 @@ use trpl::Stream;
 
 use crate::{
     application::abstractions::abstractions::MoviesImagesFetcher,
-    domain::movie::{complete_movie::CompleteMovie, detailed_movie::DetailedMovie},
+    domain::movie::{
+        complete_movie::CompleteMovie,
+        detailed_movie::{DetailedMovie, EnrichedMovie},
+    },
     infrastructure::tmdb_api_infra::utils::fetch_and_store_image,
 };
 
@@ -20,18 +23,21 @@ pub struct TMDBMoviesImagesFetcher {
 impl MoviesImagesFetcher for TMDBMoviesImagesFetcher {
     fn get_images(
         &self,
-        detailed_movies: impl Stream<Item = Result<DetailedMovie>>,
+        detailed_movies: impl Stream<Item = Result<EnrichedMovie>>,
         placeholder_path: &str,
     ) -> impl Stream<Item = Result<CompleteMovie>> {
         let complete_movies = detailed_movies.and_then(move |detailed_movie| {
             let client = self.client.clone();
             async move {
-                let mut complete_movie = CompleteMovie::new(&detailed_movie, placeholder_path);
+                let mut complete_movie =
+                    CompleteMovie::new(&detailed_movie.movie, placeholder_path);
 
                 let poster_file_path =
-                    Self::update_movie_poster(&client, &detailed_movie, placeholder_path).await?;
+                    Self::update_movie_poster(&client, &detailed_movie.movie, placeholder_path)
+                        .await?;
                 let backdrop_file_path =
-                    Self::update_movie_backdrop(&client, &detailed_movie, placeholder_path).await?;
+                    Self::update_movie_backdrop(&client, &detailed_movie.movie, placeholder_path)
+                        .await?;
 
                 complete_movie.set_backdrop_file_path(poster_file_path);
                 complete_movie.set_backdrop_file_path(backdrop_file_path);

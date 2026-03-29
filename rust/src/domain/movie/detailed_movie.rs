@@ -1,6 +1,25 @@
+use futures::stream;
 use serde::Deserialize;
 
-use crate::domain::movie::value_objects::MovieGenres;
+use crate::domain::{
+    movie::value_objects::MovieGenres,
+    person::{credits::CreditsMovie, person_data::PersonData},
+};
+
+pub struct EnrichedMovie {
+    pub movie: DetailedMovie,
+    pub credits: CreditsMovie,
+    pub persons: Vec<PersonData>,
+}
+impl EnrichedMovie {
+    pub fn new(movie: DetailedMovie, credits: CreditsMovie, persons: Vec<PersonData>) -> Self {
+        Self {
+            movie,
+            credits,
+            persons,
+        }
+    }
+}
 
 #[derive(Deserialize, Debug)]
 pub struct MovieDetailResult {

@@ -1,5 +1,8 @@
-use crate::application::abstractions::abstractions::{
-    FileExplorer, MovieRepository, MoviesDetailsFetcher, MoviesImagesFetcher, MoviesParser,
+use crate::{
+    application::abstractions::abstractions::{
+        FileExplorer, MovieRepository, MoviesDetailsFetcher, MoviesImagesFetcher, MoviesParser,
+    },
+    domain::{movie::detailed_movie, person::credits},
 };
 
 use anyhow::Result;
@@ -50,13 +53,11 @@ where
         let entries = self.explorer.get_entries(path);
         let parsed_movies = self.parser.get_movies(entries);
         let detailed_movies = self.details_fetcher.get_details(parsed_movies);
+        let enriched_movies = self.details_fetcher.fetch_credits(detailed_movies);
         let mut complete_movies = Box::pin(
             self.images_fetcher
-                .get_images(detailed_movies, placeholder_path),
+                .get_images(enriched_movies, placeholder_path),
         );
-        while let Some(movie) = complete_movies.next().await {
-            println!("{:?}", movie);
-        }
 
         Ok(())
     }

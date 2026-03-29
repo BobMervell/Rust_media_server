@@ -1,9 +1,14 @@
 use anyhow::Result;
 use trpl::Stream;
 
-use crate::domain::movie::{
-    complete_movie::CompleteMovie, detailed_movie::DetailedMovie, parsed_movie::ParsedMovie,
-    raw_entry::RawEntry,
+use crate::domain::{
+    movie::{
+        complete_movie::CompleteMovie,
+        detailed_movie::{self, DetailedMovie, EnrichedMovie},
+        parsed_movie::ParsedMovie,
+        raw_entry::RawEntry,
+    },
+    person::{credits::CreditsMovie, person_data::PersonData},
 };
 
 pub trait FileExplorer {
@@ -22,21 +27,19 @@ pub trait MoviesDetailsFetcher {
         &self,
         parsed_movies: impl Stream<Item = Result<ParsedMovie>>,
     ) -> impl Stream<Item = Result<DetailedMovie>>;
+
+    fn fetch_credits(
+        &self,
+        detailed_movies: impl Stream<Item = Result<DetailedMovie>>,
+    ) -> impl Stream<Item = Result<EnrichedMovie>>;
 }
 
 pub trait MoviesImagesFetcher {
     fn get_images(
         &self,
-        detailed_movies: impl Stream<Item = Result<DetailedMovie>>,
+        detailed_movies: impl Stream<Item = Result<EnrichedMovie>>,
         placeholder_path: &str,
     ) -> impl Stream<Item = Result<CompleteMovie>>;
-}
-
-pub trait MoviesCreditsFetcher {
-    fn get_credits(
-        &self,
-        parsed_movies: impl Stream<Item = Result<ParsedMovie>>,
-    ) -> impl Stream<Item = Result<DetailedMovie>>;
 }
 
 pub trait MovieRepository {
