@@ -7,6 +7,7 @@ use crate::{
     db_interface::data_getter::DataGetter,
     domain::services::movie_parser::MovieNameParser,
     infrastructure::{
+        db_infra::sqlite_data_saver::SqliteDataSaver,
         file_explorers_infra::smb_explorer::SmbExplorer,
         tmdb_api_infra::{
             tmdb_movie_details::TMDBMoviesDetailsFetcher,
@@ -53,7 +54,9 @@ pub async fn start(path: &str, username: &str, password: &str, token: &str) -> S
     let parser = MovieNameParser {};
     let details_fetcher = TMDBMoviesDetailsFetcher::new(token).unwrap();
     let image_fetcher = TMDBMoviesImagesFetcher::new(token).unwrap();
-    let test = MovieIngestionService::new(explorer, parser, details_fetcher, image_fetcher);
+    let saver = SqliteDataSaver::new().unwrap();
+    let mut test =
+        MovieIngestionService::new(explorer, parser, details_fetcher, image_fetcher, saver);
     let truc = test.ingest_movies().await;
     // let res = retrieve_media(path, username, password, token).await;
     tracing::info!("Hello,!");

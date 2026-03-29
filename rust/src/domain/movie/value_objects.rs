@@ -19,6 +19,9 @@ pub struct MovieGenres {
     genres: Vec<Genre>,
 }
 impl MovieGenres {
+    pub fn iter(&self) -> impl Iterator<Item = &Genre> {
+        self.genres.iter()
+    }
     pub fn genres(&self) -> Vec<Genre> {
         self.genres.clone()
     }

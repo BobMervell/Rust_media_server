@@ -43,5 +43,8 @@ pub trait MoviesImagesFetcher {
 }
 
 pub trait MovieRepository {
-    fn new(&self) -> Self;
+    async fn save_enriched_movies(
+        &mut self,
+        enriched_movies: impl Stream<Item = Result<CompleteEnrichedMovie>>,
+    ) -> Vec<(Result<()>, Result<()>)>;
 }

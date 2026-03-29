@@ -1,6 +1,6 @@
 use crate::{
     domain::{
-        movie::detailed_movie::DetailedMovie,
+        movie::{detailed_movie::DetailedMovie, value_objects::MovieGenres},
         person::{credits::CreditsMovie, person_data::PersonData},
     },
     movie_data::movie_data::Genre,
@@ -30,7 +30,7 @@ pub struct CompleteMovie {
     tmdb_id: i64,
     original_title: String,
     title: String,
-    genres: Vec<Genre>,
+    genres: MovieGenres,
     vote_average: f32,
     release_date: String,
     summary: String,
@@ -50,7 +50,7 @@ impl CompleteMovie {
             tmdb_id: detailed_movie.tmdb_id(),
             original_title: detailed_movie.original_title().to_owned(),
             title: detailed_movie.title().to_owned(),
-            genres: Vec::new(),
+            genres: detailed_movie.genre().to_owned(),
             vote_average: detailed_movie.vote_average(),
             release_date: detailed_movie.release_date().to_owned(),
             summary: detailed_movie.overview().to_owned(),
@@ -89,7 +89,7 @@ impl CompleteMovie {
         &self.title
     }
 
-    pub fn genres(&self) -> &[Genre] {
+    pub fn genres(&self) -> &MovieGenres {
         &self.genres
     }
 
@@ -129,7 +129,7 @@ impl CompleteMovie {
         self.backdrop_file_path = new_path
     }
 
-    pub fn set_genres(&mut self, new_genres: Vec<Genre>) {
+    pub fn set_genres(&mut self, new_genres: MovieGenres) {
         self.genres = new_genres;
     }
 }

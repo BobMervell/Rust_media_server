@@ -1,6 +1,13 @@
-use crate::movie_data::movie_data::{CreditsMovie, MovieData, PersonData};
 use anyhow::{Context, Result};
 use rusqlite::{Connection, Transaction};
+
+use crate::domain::{
+    movie::{
+        complete_movie::{CompleteEnrichedMovie, CompleteMovie},
+        detailed_movie::EnrichedMovie,
+    },
+    person::{credits::CreditsMovie, person_data::PersonData},
+};
 
 pub struct DataSaver {
     conn: Connection,
@@ -153,7 +160,7 @@ impl DataSaver {
 
     // region: ---- INSERT DATA ----
     /// Persists all movie-related data, including basic information, genres, and credits.
-    pub fn push_movie_data(&mut self, m: &MovieData, c: &CreditsMovie) -> Result<()> {
+    pub fn push_movie_data(&mut self, m: &CompleteMovie, c: &CreditsMovie) -> Result<()> {
         let tx = self
             .conn
             .transaction()
@@ -198,7 +205,7 @@ impl DataSaver {
         Ok(())
     }
 
-    fn push_movie(m: &MovieData, tx: &Transaction) -> Result<i64> {
+    fn push_movie(m: &CompleteMovie, tx: &Transaction) -> Result<i64> {
         tx.execute(
             "
         INSERT INTO Movie ( tmdb_id, file_path, file_optional_info, title, original_title,
@@ -214,8 +221,8 @@ impl DataSaver {
                 m.release_date(),
                 m.summary(),
                 m.vote_average(),
-                m.poster(),
-                m.backdrop(),
+                m.poster_file_path(),
+                m.backdrop_file_path(),
             ),
         )
         .with_context(|| {
@@ -252,7 +259,7 @@ impl DataSaver {
                 "INSERT INTO Person (tmdb_id, name, summary, picture_path)
          VALUES (?1, ?2, ?3, ?4)
         ON CONFLICT(tmdb_id) DO NOTHING;",
-                (p.tmdb_id(), p.name(), p.summary(), p.picture_path()),
+                (p.tmdb_id(), p.name(), p.biography(), p.picture_file_path()),
             )
             .with_context(|| {
                 format!("Failed to insert new entry into person table: {}", p.name())
@@ -272,7 +279,7 @@ impl DataSaver {
             )
             .context("Failed to prepare statement for credit insertion into Credits table")?;
 
-        for cast in c.credits_cast().iter() {
+        for cast in c.cast().iter() {
             statement
                 .execute((
                     cast.tmdb_id(),
@@ -282,21 +289,21 @@ impl DataSaver {
                     cast.character(),
                 ))
                 .with_context(|| {
-                    format!("Failed to insert cast into Person table for: {}", cast)
+                    format!("Failed to insert cast into Person table for: {:?}", cast)
                 })?;
         }
 
-        for crew in c.credits_crew().iter() {
+        for crew in c.crew().iter() {
             statement
                 .execute((crew.tmdb_id(), movie_id, crew.name(), crew.job(), "N/A"))
                 .with_context(|| {
-                    format!("Failed to insert crew into Person table for: {}", crew)
+                    format!("Failed to insert crew into Person table for: {:?}", crew)
                 })?;
         }
         Ok(())
     }
 
-    fn push_genre(movie_id: i64, m: &MovieData, tx: &Transaction) -> Result<()> {
+    fn push_genre(movie_id: i64, m: &CompleteMovie, tx: &Transaction) -> Result<()> {
         for genre in m.genres().iter() {
             tx.execute(
                 "INSERT INTO Genre ( id, name)
@@ -305,7 +312,10 @@ impl DataSaver {
                 (genre.id(), genre.name()),
             )
             .with_context(|| {
-                format!("Failed to insert new entry into Genre table for: {}", genre)
+                format!(
+                    "Failed to insert new entry into Genre table for: {:?}",
+                    genre
+                )
             })?;
 
             Self::push_movie_genre(genre.id(), movie_id, tx)?;
