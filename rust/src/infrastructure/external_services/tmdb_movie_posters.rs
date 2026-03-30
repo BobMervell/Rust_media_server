@@ -16,7 +16,7 @@ use crate::{
         },
         person::person_data::PersonData,
     },
-    infrastructure::tmdb_api_infra::utils::fetch_and_store_image,
+    infrastructure::external_services::utils::fetch_and_store_image,
 };
 
 pub struct TMDBMoviesImagesFetcher {

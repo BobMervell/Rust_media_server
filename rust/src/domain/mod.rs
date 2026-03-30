@@ -1,3 +1,3 @@
 pub mod movie;
 pub mod person;
-pub mod utils;
+pub mod service;

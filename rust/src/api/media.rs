@@ -7,14 +7,12 @@ use crate::{
     application::services::movie_ingestion_service::{
         media_discovery_service::SmbExplorer, movie_factory::MovieExtractor,
         movie_ingestion_service::MovieIngestionService,
+        movie_metadata_service::TMDBMoviesDetailsFetcher,
     },
     db_interface::data_getter::DataGetter,
     infrastructure::{
         db_infra::sqlite_data_saver::SqliteDataSaver,
-        tmdb_api_infra::{
-            tmdb_movie_details::TMDBMoviesDetailsFetcher,
-            tmdb_movie_posters::TMDBMoviesImagesFetcher,
-        },
+        external_services::tmdb_movie_posters::TMDBMoviesImagesFetcher,
     },
     movie_data::movie_data::PersonSnapshot,
 };

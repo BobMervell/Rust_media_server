@@ -2,7 +2,7 @@ use crate::{
     application::abstractions::abstractions::MovieFactory,
     domain::{
         movie::{parsed_movie::ParsedMovie, raw_entry::RawEntry},
-        utils,
+        service::filter_movies,
     },
 };
 use anyhow::{anyhow, Result};
@@ -16,8 +16,8 @@ impl MovieFactory for MovieExtractor {
     ) -> impl Stream<Item = Result<ParsedMovie>> {
         let parsed_movies = entries.filter_map(|entry_res| match entry_res {
             Ok(entry) => {
-                if utils::is_video_file(&entry.file_name())
-                    && utils::is_not_featurette(&entry.file_name())
+                if filter_movies::is_video_file(&entry.file_name())
+                    && filter_movies::is_not_featurette(&entry.file_name())
                 {
                     return Some(ParsedMovie::new(entry.file_path(), entry.file_name()));
                 }
