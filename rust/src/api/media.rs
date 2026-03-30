@@ -4,12 +4,13 @@ pub use crate::{
 }; //expose for dart
 
 use crate::{
-    application::services::movie_ingestion_service::movie_ingestion_service::MovieIngestionService,
+    application::services::movie_ingestion_service::{
+        media_discovery_service::SmbExplorer, movie_ingestion_service::MovieIngestionService,
+    },
     db_interface::data_getter::DataGetter,
     domain::services::movie_parser::MovieNameParser,
     infrastructure::{
         db_infra::sqlite_data_saver::SqliteDataSaver,
-        file_explorers_infra::smb_explorer::SmbExplorer,
         tmdb_api_infra::{
             tmdb_movie_details::TMDBMoviesDetailsFetcher,
             tmdb_movie_posters::TMDBMoviesImagesFetcher,
