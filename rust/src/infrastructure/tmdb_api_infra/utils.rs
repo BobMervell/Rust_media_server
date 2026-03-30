@@ -1,5 +1,4 @@
 use anyhow::{anyhow, Context, Result};
-use axum::http::response;
 use reqwest::{Client, Response};
 
 use crate::infrastructure::os_infra::file_system::{create_dir, save_image};

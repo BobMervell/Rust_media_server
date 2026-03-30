@@ -17,12 +17,6 @@ impl CreditsMovie {
     pub fn crew(&self) -> &Vec<Crew> {
         &self.crew
     }
-    pub fn cast_mut(&mut self) -> &mut Vec<Cast> {
-        &mut self.cast
-    }
-    pub fn crew_mut(&mut self) -> &mut Vec<Crew> {
-        &mut self.crew
-    }
 }
 
 #[derive(Deserialize, Debug, Clone)]
