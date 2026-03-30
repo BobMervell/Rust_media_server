@@ -1,11 +1,8 @@
-use std::any::TypeId;
-
 use crate::{
-    application::abstractions::abstractions::{MovieRepository, MoviesParser},
-    db_interface::data_saver::DataSaver,
+    application::abstractions::abstractions::MovieRepository, db_interface::data_saver::DataSaver,
     domain::movie::complete_movie::CompleteEnrichedMovie,
 };
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result};
 use futures::StreamExt;
 use trpl::Stream;
 pub struct SqliteDataSaver {
@@ -22,7 +19,7 @@ impl MovieRepository for SqliteDataSaver {
         for movie in movies {
             match movie {
                 Ok(m) => {
-                    println!("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA \n {}", m.movie.title());
+                    println!("{}", m.movie.title());
                     let pushed_persons = self.data_saver.push_persons(m.persons);
                     let pushed_movie = self.data_saver.push_movie_data(&m.movie, &m.credits);
                     output.push((pushed_persons, pushed_movie));

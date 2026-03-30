@@ -5,14 +5,13 @@ use reqwest::{
     header::{ACCEPT, AUTHORIZATION},
     Client,
 };
-use serde::de;
 use trpl::Stream;
 
 use crate::{
     application::abstractions::abstractions::MoviesDetailsFetcher,
     domain::{
         movie::{
-            detailed_movie::{self, DetailedMovie, EnrichedMovie, MovieDetailResult},
+            detailed_movie::{DetailedMovie, EnrichedMovie, MovieDetailResult},
             parsed_movie::ParsedMovie,
             value_objects::MovieGenres,
         },
@@ -332,7 +331,7 @@ impl TMDBMoviesDetailsFetcher {
 // region: ---- FILTER CREDITS ----
 
 fn is_credited(cast: &Cast) -> bool {
-    return (!cast.character().contains("uncredited"));
+    return !cast.character().contains("uncredited");
 }
 
 fn is_main_crew(crew: &Crew) -> bool {
