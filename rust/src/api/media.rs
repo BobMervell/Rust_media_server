@@ -5,10 +5,10 @@ pub use crate::{
 
 use crate::{
     application::services::movie_ingestion_service::{
-        media_discovery_service::SmbExplorer, movie_ingestion_service::MovieIngestionService,
+        media_discovery_service::SmbExplorer, movie_factory::MovieExtractor,
+        movie_ingestion_service::MovieIngestionService,
     },
     db_interface::data_getter::DataGetter,
-    domain::services::movie_parser::MovieNameParser,
     infrastructure::{
         db_infra::sqlite_data_saver::SqliteDataSaver,
         tmdb_api_infra::{
@@ -46,7 +46,7 @@ pub async fn start(path: &str, username: &str, password: &str, token: &str) -> S
     let explorer = SmbExplorer::new(path.to_owned(), username.to_owned(), password.to_owned())
         .await
         .unwrap();
-    let parser = MovieNameParser {};
+    let parser = MovieExtractor {};
     let details_fetcher = TMDBMoviesDetailsFetcher::new(token).unwrap();
     let image_fetcher = TMDBMoviesImagesFetcher::new(token).unwrap();
     let saver = SqliteDataSaver::new().unwrap();
