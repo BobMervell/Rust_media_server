@@ -1,6 +1,6 @@
 import 'package:fluster_media_center/features/ProfilePage/widgets/profile_summary.dart';
 import 'package:fluster_media_center/src/rust/api/media.dart';
-import 'package:fluster_media_center/src/rust/movie_data/movie_data.dart';
+import 'package:fluster_media_center/src/rust/domain/person/person_data.dart';
 import 'package:flutter/material.dart';
 
 class ProfilePage extends StatelessWidget {

@@ -537,18 +537,20 @@ impl SseDecode for Option<String> {
     }
 }
 
-impl SseDecode for crate::movie_data::movie_data::PersonData {
+impl SseDecode for crate::domain::person::person_data::PersonData {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_tmdbId = <i64>::sse_decode(deserializer);
         let mut var_name = <String>::sse_decode(deserializer);
-        let mut var_summary = <String>::sse_decode(deserializer);
-        let mut var_picturePath = <Option<String>>::sse_decode(deserializer);
-        return crate::movie_data::movie_data::PersonData {
+        let mut var_biography = <String>::sse_decode(deserializer);
+        let mut var_pictureApiPath = <Option<String>>::sse_decode(deserializer);
+        let mut var_pictureFilePath = <String>::sse_decode(deserializer);
+        return crate::domain::person::person_data::PersonData {
             tmdb_id: var_tmdbId,
             name: var_name,
-            summary: var_summary,
-            picture_path: var_picturePath,
+            biography: var_biography,
+            picture_api_path: var_pictureApiPath,
+            picture_file_path: var_pictureFilePath,
         };
     }
 }
@@ -689,25 +691,26 @@ impl flutter_rust_bridge::IntoIntoDart<crate::movie_data::movie_data::MovieSnaps
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::movie_data::movie_data::PersonData {
+impl flutter_rust_bridge::IntoDart for crate::domain::person::person_data::PersonData {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
             self.tmdb_id.into_into_dart().into_dart(),
             self.name.into_into_dart().into_dart(),
-            self.summary.into_into_dart().into_dart(),
-            self.picture_path.into_into_dart().into_dart(),
+            self.biography.into_into_dart().into_dart(),
+            self.picture_api_path.into_into_dart().into_dart(),
+            self.picture_file_path.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for crate::movie_data::movie_data::PersonData
+    for crate::domain::person::person_data::PersonData
 {
 }
-impl flutter_rust_bridge::IntoIntoDart<crate::movie_data::movie_data::PersonData>
-    for crate::movie_data::movie_data::PersonData
+impl flutter_rust_bridge::IntoIntoDart<crate::domain::person::person_data::PersonData>
+    for crate::domain::person::person_data::PersonData
 {
-    fn into_into_dart(self) -> crate::movie_data::movie_data::PersonData {
+    fn into_into_dart(self) -> crate::domain::person::person_data::PersonData {
         self
     }
 }
@@ -832,13 +835,14 @@ impl SseEncode for Option<String> {
     }
 }
 
-impl SseEncode for crate::movie_data::movie_data::PersonData {
+impl SseEncode for crate::domain::person::person_data::PersonData {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <i64>::sse_encode(self.tmdb_id, serializer);
         <String>::sse_encode(self.name, serializer);
-        <String>::sse_encode(self.summary, serializer);
-        <Option<String>>::sse_encode(self.picture_path, serializer);
+        <String>::sse_encode(self.biography, serializer);
+        <Option<String>>::sse_encode(self.picture_api_path, serializer);
+        <String>::sse_encode(self.picture_file_path, serializer);
     }
 }
 

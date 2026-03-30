@@ -1,9 +1,10 @@
-pub use crate::movie_data::movie_data::{MediaData, MovieSnapshot, PersonData}; //expose for dart
+pub use crate::{
+    domain::person::person_data::PersonData,
+    movie_data::movie_data::{MediaData, MovieSnapshot},
+}; //expose for dart
+
 use crate::{
-    application::{
-        abstractions::abstractions::MoviesImagesFetcher,
-        systems::movie_ingestion_service::MovieIngestionService,
-    },
+    application::systems::movie_ingestion_service::MovieIngestionService,
     db_interface::data_getter::DataGetter,
     domain::services::movie_parser::MovieNameParser,
     infrastructure::{
@@ -15,7 +16,6 @@ use crate::{
         },
     },
     movie_data::movie_data::PersonSnapshot,
-    smb_mounter::smb_mounter::{mount_smb, unmount_smb},
 };
 use anyhow::{Context, Result};
 
@@ -39,12 +39,6 @@ fn init_tracing_subscriber() {
     tracing_log::LogTracer::init().ok();
 }
 
-// #[flutter_rust_bridge::frb]
-// pub async fn start(path: &str, username: &str, password: &str, token: &str) -> String {
-//     let res = retrieve_media(path, username, password, token).await;
-//     tracing::info!("Hello, {:?}!", res);
-// }
-
 #[flutter_rust_bridge::frb]
 pub async fn start(path: &str, username: &str, password: &str, token: &str) -> String {
     println!("startinf");
@@ -58,8 +52,6 @@ pub async fn start(path: &str, username: &str, password: &str, token: &str) -> S
     let mut test =
         MovieIngestionService::new(explorer, parser, details_fetcher, image_fetcher, saver);
     let truc = test.ingest_movies().await;
-    // let res = retrieve_media(path, username, password, token).await;
-    tracing::info!("Hello,!");
     format!("Hello!")
 }
 
@@ -95,13 +87,13 @@ pub fn get_person(person_tmdb_id: i64) -> Result<PersonData> {
 
 #[flutter_rust_bridge::frb]
 pub async fn tempo_mount_smb() -> Result<()> {
-    mount_smb("user", "passwd", "ip", "folder_path", "mount_point")?;
+    // mount_smb("user", "passwd", "ip", "folder_path", "mount_point")?;
     Ok(())
 }
 
 #[flutter_rust_bridge::frb]
 pub fn tempo_unmount_smb() -> Result<()> {
-    unmount_smb("/mnt/smb/fluster")?;
+    // unmount_smb("/mnt/smb/fluster")?;
     Ok(())
 }
 

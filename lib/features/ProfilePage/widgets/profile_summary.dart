@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:fluster_media_center/src/rust/movie_data/movie_data.dart';
+import 'package:fluster_media_center/src/rust/domain/person/person_data.dart';
 import 'package:flutter/material.dart';
 
 class ProfileSummary extends StatelessWidget {
@@ -69,7 +69,7 @@ class Picture extends StatelessWidget {
       ),
       clipBehavior: Clip.antiAlias,
       child: Image.file(
-        File(profile.picturePath ?? ""),
+        File(profile.pictureFilePath),
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
           return const Center(child: Text("Impossible de charger l'image"));
@@ -88,7 +88,7 @@ class Biography extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      profile.summary,
+      profile.biography,
       textAlign: TextAlign.justify,
       style: TextStyle(fontSize: 16, color: textColor),
     );

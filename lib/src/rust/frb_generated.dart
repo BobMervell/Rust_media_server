@@ -6,6 +6,7 @@
 import 'api/media.dart';
 import 'dart:async';
 import 'dart:convert';
+import 'domain/person/person_data.dart';
 import 'frb_generated.dart';
 import 'frb_generated.io.dart'
     if (dart.library.js_interop) 'frb_generated.web.dart';
@@ -506,13 +507,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   PersonData dco_decode_person_data(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 4)
-      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
     return PersonData(
       tmdbId: dco_decode_i_64(arr[0]),
       name: dco_decode_String(arr[1]),
-      summary: dco_decode_String(arr[2]),
-      picturePath: dco_decode_opt_String(arr[3]),
+      biography: dco_decode_String(arr[2]),
+      pictureApiPath: dco_decode_opt_String(arr[3]),
+      pictureFilePath: dco_decode_String(arr[4]),
     );
   }
 
@@ -666,13 +668,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_tmdbId = sse_decode_i_64(deserializer);
     var var_name = sse_decode_String(deserializer);
-    var var_summary = sse_decode_String(deserializer);
-    var var_picturePath = sse_decode_opt_String(deserializer);
+    var var_biography = sse_decode_String(deserializer);
+    var var_pictureApiPath = sse_decode_opt_String(deserializer);
+    var var_pictureFilePath = sse_decode_String(deserializer);
     return PersonData(
       tmdbId: var_tmdbId,
       name: var_name,
-      summary: var_summary,
-      picturePath: var_picturePath,
+      biography: var_biography,
+      pictureApiPath: var_pictureApiPath,
+      pictureFilePath: var_pictureFilePath,
     );
   }
 
@@ -818,8 +822,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_i_64(self.tmdbId, serializer);
     sse_encode_String(self.name, serializer);
-    sse_encode_String(self.summary, serializer);
-    sse_encode_opt_String(self.picturePath, serializer);
+    sse_encode_String(self.biography, serializer);
+    sse_encode_opt_String(self.pictureApiPath, serializer);
+    sse_encode_String(self.pictureFilePath, serializer);
   }
 
   @protected

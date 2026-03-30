@@ -1,9 +1,6 @@
-use crate::{
-    domain::{
-        movie::{detailed_movie::DetailedMovie, value_objects::MovieGenres},
-        person::{credits::CreditsMovie, person_data::PersonData},
-    },
-    movie_data::movie_data::Genre,
+use crate::domain::{
+    movie::{detailed_movie::DetailedMovie, value_objects::MovieGenres},
+    person::{credits::CreditsMovie, person_data::PersonData},
 };
 
 pub struct CompleteEnrichedMovie {

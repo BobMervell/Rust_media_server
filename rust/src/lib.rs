@@ -5,8 +5,4 @@ mod directory_explorer;
 mod domain;
 mod frb_generated;
 mod infrastructure;
-mod media_retriever;
 mod movie_data;
-mod os_interface;
-mod smb_mounter;
-mod tmdb_client;

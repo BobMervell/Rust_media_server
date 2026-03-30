@@ -1,4 +1,7 @@
-use crate::movie_data::movie_data::{MediaData, MovieSnapshot, PersonData, PersonSnapshot};
+use crate::{
+    domain::person::person_data::PersonData,
+    movie_data::movie_data::{MediaData, MovieSnapshot, PersonSnapshot},
+};
 use anyhow::{Context, Result};
 use rusqlite::Connection;
 
@@ -156,6 +159,7 @@ impl DataGetter {
                     row.get(0)?,
                     row.get(1)?,
                     row.get(2)?,
+                    None,
                     row.get(3)?,
                 ))
             })

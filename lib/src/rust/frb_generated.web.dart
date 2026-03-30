@@ -9,6 +9,7 @@
 import 'api/media.dart';
 import 'dart:async';
 import 'dart:convert';
+import 'domain/person/person_data.dart';
 import 'frb_generated.dart';
 import 'movie_data/movie_data.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_web.dart';
