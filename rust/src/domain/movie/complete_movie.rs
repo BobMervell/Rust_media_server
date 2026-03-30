@@ -38,7 +38,7 @@ pub struct CompleteMovie {
 }
 
 impl CompleteMovie {
-    pub fn new(detailed_movie: &DetailedMovie, placeholder_path: &str) -> Self {
+    pub fn new(detailed_movie: &DetailedMovie) -> Self {
         Self {
             id: 0,
             file_path: detailed_movie.file_path().to_owned(),
@@ -117,7 +117,9 @@ impl CompleteMovie {
     pub fn backdrop_tmdb_path(&self) -> Option<&str> {
         self.backdrop_tmdb_path.as_deref()
     }
-
+    pub fn set_id(&mut self, new_id: i64) {
+        self.id = new_id
+    }
     pub fn set_poster_file_path(&mut self, new_path: String) {
         self.poster_file_path = new_path
     }

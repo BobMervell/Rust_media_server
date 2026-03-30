@@ -28,7 +28,7 @@ impl MovieAssetService for TMDBMovieAssetService {
         let complete_movies = detailed_movies.and_then(move |mut detailed_movie| {
             let tmdb_api = self.tmdb_api.clone();
             async move {
-                let complete_movie = CompleteMovie::new(&detailed_movie.movie, placeholder_path);
+                let complete_movie = CompleteMovie::new(&detailed_movie.movie);
                 let mut complete_movie = complete_movie;
 
                 let poster_file_path = Self::fetch_save_movie_poster(
