@@ -8,7 +8,7 @@ use reqwest::{
 use trpl::Stream;
 
 use crate::{
-    application::abstractions::abstractions::MoviesImagesFetcher,
+    application::abstractions::abstractions::MovieAssetService,
     domain::{
         movie::{
             complete_movie::{CompleteEnrichedMovie, CompleteMovie},
@@ -23,7 +23,7 @@ pub struct TMDBMoviesImagesFetcher {
     client: Client,
 }
 
-impl MoviesImagesFetcher for TMDBMoviesImagesFetcher {
+impl MovieAssetService for TMDBMoviesImagesFetcher {
     fn get_images(
         &self,
         detailed_movies: impl Stream<Item = Result<EnrichedMovie>>,

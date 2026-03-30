@@ -1,12 +1,12 @@
 use crate::{
-    application::abstractions::abstractions::MoviesParser,
+    application::abstractions::abstractions::MovieFactory,
     domain::movie::{parsed_movie::ParsedMovie, raw_entry::RawEntry},
 };
 use anyhow::{anyhow, Result};
 use trpl::{Stream, StreamExt};
 pub struct MovieNameParser {}
 
-impl MoviesParser for MovieNameParser {
+impl MovieFactory for MovieNameParser {
     fn get_movies(
         &self,
         entries: impl Stream<Item = Result<RawEntry>>,

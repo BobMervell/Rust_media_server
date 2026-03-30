@@ -8,7 +8,7 @@ use reqwest::{
 use trpl::Stream;
 
 use crate::{
-    application::abstractions::abstractions::MoviesDetailsFetcher,
+    application::abstractions::abstractions::MovieMetadataService,
     domain::{
         movie::{
             detailed_movie::{DetailedMovie, EnrichedMovie, MovieDetailResult},
@@ -28,7 +28,7 @@ pub struct TMDBMoviesDetailsFetcher {
     client: Client,
 }
 
-impl MoviesDetailsFetcher for TMDBMoviesDetailsFetcher {
+impl MovieMetadataService for TMDBMoviesDetailsFetcher {
     fn get_details(
         &self,
         parsed_movies: impl Stream<Item = Result<ParsedMovie>>,

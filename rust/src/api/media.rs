@@ -4,7 +4,7 @@ pub use crate::{
 }; //expose for dart
 
 use crate::{
-    application::systems::movie_ingestion_service::MovieIngestionService,
+    application::services::movie_ingestion_service::movie_ingestion_service::MovieIngestionService,
     db_interface::data_getter::DataGetter,
     domain::services::movie_parser::MovieNameParser,
     infrastructure::{

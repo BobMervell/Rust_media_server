@@ -1,5 +1,6 @@
 use crate::{
-    application::abstractions::abstractions::FileExplorer, domain::movie::raw_entry::RawEntry,
+    application::abstractions::abstractions::MediaDiscoveryService,
+    domain::movie::raw_entry::RawEntry,
 };
 
 use anyhow::{anyhow, Context, Result};
@@ -16,7 +17,7 @@ pub struct SmbExplorer {
     root_path: String,
 }
 
-impl FileExplorer for SmbExplorer {
+impl MediaDiscoveryService for SmbExplorer {
     fn get_entries<'a>(&'a self, path: &'a str) -> impl Stream<Item = Result<RawEntry>> + 'a {
         let span = debug_span!("fetch_movies", path = path);
         let _enter = span.enter();

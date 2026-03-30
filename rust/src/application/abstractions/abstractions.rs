@@ -1,28 +1,25 @@
 use anyhow::Result;
 use trpl::Stream;
 
-use crate::domain::{
-    movie::{
-        complete_movie::{CompleteEnrichedMovie, CompleteMovie},
-        detailed_movie::{self, DetailedMovie, EnrichedMovie},
-        parsed_movie::ParsedMovie,
-        raw_entry::RawEntry,
-    },
-    person::{credits::CreditsMovie, person_data::PersonData},
+use crate::domain::movie::{
+    complete_movie::CompleteEnrichedMovie,
+    detailed_movie::{DetailedMovie, EnrichedMovie},
+    parsed_movie::ParsedMovie,
+    raw_entry::RawEntry,
 };
 
-pub trait FileExplorer {
+pub trait MediaDiscoveryService {
     fn get_entries<'a>(&'a self, path: &'a str) -> impl Stream<Item = Result<RawEntry>> + 'a;
 }
 
-pub trait MoviesParser {
+pub trait MovieFactory {
     fn get_movies(
         &self,
         entries: impl Stream<Item = Result<RawEntry>>,
     ) -> impl Stream<Item = Result<ParsedMovie>>;
 }
 
-pub trait MoviesDetailsFetcher {
+pub trait MovieMetadataService {
     fn get_details(
         &self,
         parsed_movies: impl Stream<Item = Result<ParsedMovie>>,
@@ -34,7 +31,7 @@ pub trait MoviesDetailsFetcher {
     ) -> impl Stream<Item = Result<EnrichedMovie>>;
 }
 
-pub trait MoviesImagesFetcher {
+pub trait MovieAssetService {
     fn get_images(
         &self,
         detailed_movies: impl Stream<Item = Result<EnrichedMovie>>,
