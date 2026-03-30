@@ -32,7 +32,7 @@ pub trait MovieMetadataService {
 }
 
 pub trait MovieAssetService {
-    fn get_images(
+    fn get_assets(
         &self,
         detailed_movies: impl Stream<Item = Result<EnrichedMovie>>,
         placeholder_path: &str,

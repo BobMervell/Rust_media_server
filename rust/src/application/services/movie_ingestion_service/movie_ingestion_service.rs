@@ -56,7 +56,7 @@ where
         let enriched_movies = self.metadata_service.fetch_credits(detailed_movies);
         let complete_movies = self
             .asset_service
-            .get_images(enriched_movies, placeholder_path);
+            .get_assets(enriched_movies, placeholder_path);
         self.repository.save_enriched_movies(complete_movies).await;
         Ok(())
     }
