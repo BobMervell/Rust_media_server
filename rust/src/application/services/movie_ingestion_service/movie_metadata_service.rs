@@ -15,11 +15,11 @@ use crate::{
     infrastructure::external_services::tmdb_metadata_api::TmdbMetaDataApi,
 };
 
-pub struct TMDBMoviesDetailsFetcher {
+pub struct TMDBMovieMetadataService {
     tmdb_api: TmdbMetaDataApi,
 }
 
-impl MovieMetadataService for TMDBMoviesDetailsFetcher {
+impl MovieMetadataService for TMDBMovieMetadataService {
     fn get_details(
         &self,
         parsed_movies: impl Stream<Item = Result<ParsedMovie>>,
@@ -74,7 +74,7 @@ impl MovieMetadataService for TMDBMoviesDetailsFetcher {
     }
 }
 
-impl TMDBMoviesDetailsFetcher {
+impl TMDBMovieMetadataService {
     pub fn new(token: &str) -> Result<Self> {
         Ok(Self {
             tmdb_api: TmdbMetaDataApi::new(token)?,

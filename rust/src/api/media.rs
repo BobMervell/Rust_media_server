@@ -7,7 +7,7 @@ use crate::{
     application::services::movie_ingestion_service::{
         media_discovery_service::SmbExplorer, movie_factory::MovieExtractor,
         movie_ingestion_service::MovieIngestionService,
-        movie_metadata_service::TMDBMoviesDetailsFetcher,
+        movie_metadata_service::TMDBMovieMetadataService,
     },
     db_interface::data_getter::DataGetter,
     infrastructure::{
@@ -45,7 +45,7 @@ pub async fn start(path: &str, username: &str, password: &str, token: &str) -> S
         .await
         .unwrap();
     let parser = MovieExtractor {};
-    let details_fetcher = TMDBMoviesDetailsFetcher::new(token).unwrap();
+    let details_fetcher = TMDBMovieMetadataService::new(token).unwrap();
     let image_fetcher = TMDBMoviesImagesFetcher::new(token).unwrap();
     let saver = SqliteDataSaver::new().unwrap();
     let mut test =
