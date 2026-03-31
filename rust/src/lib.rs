@@ -3,4 +3,3 @@ mod application;
 mod domain;
 mod frb_generated;
 mod infrastructure;
-mod movie_data;

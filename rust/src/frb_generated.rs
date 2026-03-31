@@ -438,29 +438,29 @@ impl SseDecode for i64 {
     }
 }
 
-impl SseDecode for Vec<crate::movie_data::movie_data::MovieSnapshot> {
+impl SseDecode for Vec<crate::domain::movie::legacy_moviedata::MovieSnapshot> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut len_ = <i32>::sse_decode(deserializer);
         let mut ans_ = vec![];
         for idx_ in 0..len_ {
-            ans_.push(<crate::movie_data::movie_data::MovieSnapshot>::sse_decode(
-                deserializer,
-            ));
+            ans_.push(
+                <crate::domain::movie::legacy_moviedata::MovieSnapshot>::sse_decode(deserializer),
+            );
         }
         return ans_;
     }
 }
 
-impl SseDecode for Vec<crate::movie_data::movie_data::PersonSnapshot> {
+impl SseDecode for Vec<crate::domain::movie::legacy_moviedata::PersonSnapshot> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut len_ = <i32>::sse_decode(deserializer);
         let mut ans_ = vec![];
         for idx_ in 0..len_ {
-            ans_.push(<crate::movie_data::movie_data::PersonSnapshot>::sse_decode(
-                deserializer,
-            ));
+            ans_.push(
+                <crate::domain::movie::legacy_moviedata::PersonSnapshot>::sse_decode(deserializer),
+            );
         }
         return ans_;
     }
@@ -478,7 +478,7 @@ impl SseDecode for Vec<u8> {
     }
 }
 
-impl SseDecode for crate::movie_data::movie_data::MediaData {
+impl SseDecode for crate::domain::movie::legacy_moviedata::MediaData {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_id = <i64>::sse_decode(deserializer);
@@ -491,7 +491,7 @@ impl SseDecode for crate::movie_data::movie_data::MediaData {
         let mut var_summary = <String>::sse_decode(deserializer);
         let mut var_poster = <String>::sse_decode(deserializer);
         let mut var_backdrop = <String>::sse_decode(deserializer);
-        return crate::movie_data::movie_data::MediaData {
+        return crate::domain::movie::legacy_moviedata::MediaData {
             id: var_id,
             file_path: var_filePath,
             file_optional_info: var_fileOptionalInfo,
@@ -506,7 +506,7 @@ impl SseDecode for crate::movie_data::movie_data::MediaData {
     }
 }
 
-impl SseDecode for crate::movie_data::movie_data::MovieSnapshot {
+impl SseDecode for crate::domain::movie::legacy_moviedata::MovieSnapshot {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_id = <i64>::sse_decode(deserializer);
@@ -515,7 +515,7 @@ impl SseDecode for crate::movie_data::movie_data::MovieSnapshot {
         let mut var_rating = <f32>::sse_decode(deserializer);
         let mut var_releaseDate = <String>::sse_decode(deserializer);
         let mut var_poster = <String>::sse_decode(deserializer);
-        return crate::movie_data::movie_data::MovieSnapshot {
+        return crate::domain::movie::legacy_moviedata::MovieSnapshot {
             id: var_id,
             file_path: var_filePath,
             title: var_title,
@@ -555,7 +555,7 @@ impl SseDecode for crate::domain::person::person_data::PersonData {
     }
 }
 
-impl SseDecode for crate::movie_data::movie_data::PersonSnapshot {
+impl SseDecode for crate::domain::movie::legacy_moviedata::PersonSnapshot {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_tmdbId = <i64>::sse_decode(deserializer);
@@ -563,7 +563,7 @@ impl SseDecode for crate::movie_data::movie_data::PersonSnapshot {
         let mut var_character = <String>::sse_decode(deserializer);
         let mut var_jobName = <String>::sse_decode(deserializer);
         let mut var_picturePath = <String>::sse_decode(deserializer);
-        return crate::movie_data::movie_data::PersonSnapshot {
+        return crate::domain::movie::legacy_moviedata::PersonSnapshot {
             tmdb_id: var_tmdbId,
             name: var_name,
             character: var_character,
@@ -637,7 +637,7 @@ fn pde_ffi_dispatcher_sync_impl(
 // Section: rust2dart
 
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::movie_data::movie_data::MediaData {
+impl flutter_rust_bridge::IntoDart for crate::domain::movie::legacy_moviedata::MediaData {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
             self.id.into_into_dart().into_dart(),
@@ -655,18 +655,18 @@ impl flutter_rust_bridge::IntoDart for crate::movie_data::movie_data::MediaData 
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for crate::movie_data::movie_data::MediaData
+    for crate::domain::movie::legacy_moviedata::MediaData
 {
 }
-impl flutter_rust_bridge::IntoIntoDart<crate::movie_data::movie_data::MediaData>
-    for crate::movie_data::movie_data::MediaData
+impl flutter_rust_bridge::IntoIntoDart<crate::domain::movie::legacy_moviedata::MediaData>
+    for crate::domain::movie::legacy_moviedata::MediaData
 {
-    fn into_into_dart(self) -> crate::movie_data::movie_data::MediaData {
+    fn into_into_dart(self) -> crate::domain::movie::legacy_moviedata::MediaData {
         self
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::movie_data::movie_data::MovieSnapshot {
+impl flutter_rust_bridge::IntoDart for crate::domain::movie::legacy_moviedata::MovieSnapshot {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
             self.id.into_into_dart().into_dart(),
@@ -680,13 +680,13 @@ impl flutter_rust_bridge::IntoDart for crate::movie_data::movie_data::MovieSnaps
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for crate::movie_data::movie_data::MovieSnapshot
+    for crate::domain::movie::legacy_moviedata::MovieSnapshot
 {
 }
-impl flutter_rust_bridge::IntoIntoDart<crate::movie_data::movie_data::MovieSnapshot>
-    for crate::movie_data::movie_data::MovieSnapshot
+impl flutter_rust_bridge::IntoIntoDart<crate::domain::movie::legacy_moviedata::MovieSnapshot>
+    for crate::domain::movie::legacy_moviedata::MovieSnapshot
 {
-    fn into_into_dart(self) -> crate::movie_data::movie_data::MovieSnapshot {
+    fn into_into_dart(self) -> crate::domain::movie::legacy_moviedata::MovieSnapshot {
         self
     }
 }
@@ -715,7 +715,7 @@ impl flutter_rust_bridge::IntoIntoDart<crate::domain::person::person_data::Perso
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::movie_data::movie_data::PersonSnapshot {
+impl flutter_rust_bridge::IntoDart for crate::domain::movie::legacy_moviedata::PersonSnapshot {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
             self.tmdb_id.into_into_dart().into_dart(),
@@ -728,13 +728,13 @@ impl flutter_rust_bridge::IntoDart for crate::movie_data::movie_data::PersonSnap
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for crate::movie_data::movie_data::PersonSnapshot
+    for crate::domain::movie::legacy_moviedata::PersonSnapshot
 {
 }
-impl flutter_rust_bridge::IntoIntoDart<crate::movie_data::movie_data::PersonSnapshot>
-    for crate::movie_data::movie_data::PersonSnapshot
+impl flutter_rust_bridge::IntoIntoDart<crate::domain::movie::legacy_moviedata::PersonSnapshot>
+    for crate::domain::movie::legacy_moviedata::PersonSnapshot
 {
-    fn into_into_dart(self) -> crate::movie_data::movie_data::PersonSnapshot {
+    fn into_into_dart(self) -> crate::domain::movie::legacy_moviedata::PersonSnapshot {
         self
     }
 }
@@ -767,22 +767,22 @@ impl SseEncode for i64 {
     }
 }
 
-impl SseEncode for Vec<crate::movie_data::movie_data::MovieSnapshot> {
+impl SseEncode for Vec<crate::domain::movie::legacy_moviedata::MovieSnapshot> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
-            <crate::movie_data::movie_data::MovieSnapshot>::sse_encode(item, serializer);
+            <crate::domain::movie::legacy_moviedata::MovieSnapshot>::sse_encode(item, serializer);
         }
     }
 }
 
-impl SseEncode for Vec<crate::movie_data::movie_data::PersonSnapshot> {
+impl SseEncode for Vec<crate::domain::movie::legacy_moviedata::PersonSnapshot> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
-            <crate::movie_data::movie_data::PersonSnapshot>::sse_encode(item, serializer);
+            <crate::domain::movie::legacy_moviedata::PersonSnapshot>::sse_encode(item, serializer);
         }
     }
 }
@@ -797,7 +797,7 @@ impl SseEncode for Vec<u8> {
     }
 }
 
-impl SseEncode for crate::movie_data::movie_data::MediaData {
+impl SseEncode for crate::domain::movie::legacy_moviedata::MediaData {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <i64>::sse_encode(self.id, serializer);
@@ -813,7 +813,7 @@ impl SseEncode for crate::movie_data::movie_data::MediaData {
     }
 }
 
-impl SseEncode for crate::movie_data::movie_data::MovieSnapshot {
+impl SseEncode for crate::domain::movie::legacy_moviedata::MovieSnapshot {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <i64>::sse_encode(self.id, serializer);
@@ -846,7 +846,7 @@ impl SseEncode for crate::domain::person::person_data::PersonData {
     }
 }
 
-impl SseEncode for crate::movie_data::movie_data::PersonSnapshot {
+impl SseEncode for crate::domain::movie::legacy_moviedata::PersonSnapshot {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <i64>::sse_encode(self.tmdb_id, serializer);

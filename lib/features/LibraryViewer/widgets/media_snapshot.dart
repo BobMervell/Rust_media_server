@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:fluster_media_center/features/MediaPage/screens/media_page.dart';
 import 'package:fluster_media_center/src/rust/api/media.dart';
-import 'package:fluster_media_center/src/rust/movie_data/movie_data.dart';
+import 'package:fluster_media_center/src/rust/domain/movie/legacy_moviedata.dart';
 import 'package:flutter/material.dart';
 
 class MediaSnapshot extends StatelessWidget {

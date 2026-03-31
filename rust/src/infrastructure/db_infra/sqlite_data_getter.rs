@@ -1,6 +1,6 @@
-use crate::{
-    domain::person::person_data::PersonData,
-    movie_data::movie_data::{MediaData, MovieSnapshot, PersonSnapshot},
+use crate::domain::{
+    movie::legacy_moviedata::{MediaData, MovieSnapshot, PersonSnapshot},
+    person::person_data::PersonData,
 };
 use anyhow::{Context, Result};
 use rusqlite::Connection;

@@ -1,6 +1,6 @@
-pub use crate::{
-    domain::person::person_data::PersonData,
-    movie_data::movie_data::{MediaData, MovieSnapshot},
+pub use crate::domain::{
+    movie::legacy_moviedata::{MediaData, MovieSnapshot, PersonSnapshot},
+    person::person_data::PersonData,
 }; //expose for dart
 
 use crate::{
@@ -10,7 +10,6 @@ use crate::{
         movie_metadata_service::TMDBMovieMetadataService, movie_repository::SqliteDataSaver,
     },
     infrastructure::db_infra::sqlite_data_getter::DataGetter,
-    movie_data::movie_data::PersonSnapshot,
 };
 use anyhow::{Context, Result};
 
