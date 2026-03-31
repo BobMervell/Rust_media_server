@@ -540,13 +540,13 @@ impl SseDecode for Option<String> {
 impl SseDecode for crate::domain::person::person_data::PersonData {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        let mut var_tmdbId = <i64>::sse_decode(deserializer);
+        let mut var_extId = <i64>::sse_decode(deserializer);
         let mut var_name = <String>::sse_decode(deserializer);
         let mut var_biography = <String>::sse_decode(deserializer);
         let mut var_pictureApiPath = <Option<String>>::sse_decode(deserializer);
         let mut var_pictureFilePath = <String>::sse_decode(deserializer);
         return crate::domain::person::person_data::PersonData {
-            tmdb_id: var_tmdbId,
+            ext_id: var_extId,
             name: var_name,
             biography: var_biography,
             picture_api_path: var_pictureApiPath,
@@ -694,7 +694,7 @@ impl flutter_rust_bridge::IntoIntoDart<crate::domain::movie::legacy_moviedata::M
 impl flutter_rust_bridge::IntoDart for crate::domain::person::person_data::PersonData {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.tmdb_id.into_into_dart().into_dart(),
+            self.ext_id.into_into_dart().into_dart(),
             self.name.into_into_dart().into_dart(),
             self.biography.into_into_dart().into_dart(),
             self.picture_api_path.into_into_dart().into_dart(),
@@ -838,7 +838,7 @@ impl SseEncode for Option<String> {
 impl SseEncode for crate::domain::person::person_data::PersonData {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <i64>::sse_encode(self.tmdb_id, serializer);
+        <i64>::sse_encode(self.ext_id, serializer);
         <String>::sse_encode(self.name, serializer);
         <String>::sse_encode(self.biography, serializer);
         <Option<String>>::sse_encode(self.picture_api_path, serializer);

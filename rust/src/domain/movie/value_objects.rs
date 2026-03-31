@@ -1,5 +1,7 @@
 use serde::Deserialize;
 
+use crate::domain::movie::detailed_movie::DetailedMovie;
+
 #[derive(Deserialize, Debug, Clone)]
 pub struct Genre {
     id: i64,
@@ -22,7 +24,19 @@ impl MovieGenres {
     pub fn iter(&self) -> impl Iterator<Item = &Genre> {
         self.genres.iter()
     }
-    pub fn genres(&self) -> Vec<Genre> {
-        self.genres.clone()
+}
+
+#[derive(Deserialize, Debug)]
+pub struct MovieDetailResult {
+    results: Vec<DetailedMovie>,
+}
+
+impl MovieDetailResult {
+    pub fn iter(&self) -> std::slice::Iter<'_, DetailedMovie> {
+        self.results.iter()
+    }
+
+    pub fn results(&self) -> &[DetailedMovie] {
+        return &self.results;
     }
 }

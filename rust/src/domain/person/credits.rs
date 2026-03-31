@@ -3,13 +3,13 @@ use serde::Deserialize;
 #[derive(Deserialize, Debug, Clone)]
 pub struct CreditsMovie {
     #[serde(rename = "id")]
-    pub movie_tmdb_id: i64,
+    pub movie_ext_id: i64,
     pub cast: Vec<Cast>,
     pub crew: Vec<Crew>,
 }
 impl CreditsMovie {
-    pub fn movie_tmdb_id(&self) -> i64 {
-        self.movie_tmdb_id
+    pub fn movie_ext_id(&self) -> i64 {
+        self.movie_ext_id
     }
     pub fn cast(&self) -> &Vec<Cast> {
         &self.cast
@@ -21,20 +21,14 @@ impl CreditsMovie {
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Cast {
-    #[serde(skip_deserializing)]
-    id: i64,
     #[serde(rename = "id")]
-    tmdb_id: i64,
+    ext_id: i64,
     name: String,
     character: String,
-    order: i32,
 }
 impl Cast {
-    pub fn id(&self) -> i64 {
-        self.id
-    }
-    pub fn tmdb_id(&self) -> i64 {
-        self.tmdb_id
+    pub fn ext_id(&self) -> i64 {
+        self.ext_id
     }
     pub fn name(&self) -> &str {
         &self.name
@@ -42,17 +36,12 @@ impl Cast {
     pub fn character(&self) -> &str {
         &self.character
     }
-    pub fn order(&self) -> i32 {
-        self.order
-    }
 }
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Crew {
-    #[serde(skip_deserializing)]
-    id: i64,
     #[serde(rename = "id")]
-    tmdb_id: i64,
+    ext_id: i64,
     name: String,
 
     department: String,
@@ -60,11 +49,8 @@ pub struct Crew {
 }
 
 impl Crew {
-    pub fn id(&self) -> i64 {
-        self.id
-    }
-    pub fn tmdb_id(&self) -> i64 {
-        self.tmdb_id
+    pub fn ext_id(&self) -> i64 {
+        self.ext_id
     }
     pub fn name(&self) -> &str {
         &self.name

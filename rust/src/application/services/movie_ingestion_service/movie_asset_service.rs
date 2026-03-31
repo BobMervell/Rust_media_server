@@ -6,10 +6,7 @@ use trpl::Stream;
 use crate::{
     application::abstractions::abstractions::MovieAssetService,
     domain::{
-        movie::{
-            complete_movie::{CompleteEnrichedMovie, CompleteMovie},
-            detailed_movie::{DetailedMovie, EnrichedMovie},
-        },
+        movie::detailed_movie::{DetailedMovie, EnrichedMovie},
         person::person_data::PersonData,
     },
     infrastructure::{external_services::tmdb_asset_api::TmdbAssetApi, os_infra::file_system},
@@ -24,13 +21,10 @@ impl MovieAssetService for TMDBMovieAssetService {
         &self,
         detailed_movies: impl Stream<Item = Result<EnrichedMovie>>,
         placeholder_path: &str,
-    ) -> impl Stream<Item = Result<CompleteEnrichedMovie>> {
+    ) -> impl Stream<Item = Result<EnrichedMovie>> {
         let complete_movies = detailed_movies.and_then(move |mut detailed_movie| {
             let tmdb_api = self.tmdb_api.clone();
             async move {
-                let complete_movie = CompleteMovie::new(&detailed_movie.movie);
-                let mut complete_movie = complete_movie;
-
                 let poster_file_path = Self::fetch_save_movie_poster(
                     &tmdb_api,
                     &detailed_movie.movie,
@@ -44,8 +38,10 @@ impl MovieAssetService for TMDBMovieAssetService {
                 )
                 .await?;
 
-                complete_movie.set_backdrop_file_path(poster_file_path);
-                complete_movie.set_backdrop_file_path(backdrop_file_path);
+                detailed_movie.movie.set_poster_file_path(poster_file_path);
+                detailed_movie
+                    .movie
+                    .set_backdrop_file_path(backdrop_file_path);
 
                 Self::fetch_save_persons_profile(
                     &tmdb_api,
@@ -53,12 +49,7 @@ impl MovieAssetService for TMDBMovieAssetService {
                     placeholder_path,
                 )
                 .await;
-                let complete_enriched_movie = CompleteEnrichedMovie::new(
-                    complete_movie,
-                    detailed_movie.credits,
-                    detailed_movie.persons,
-                );
-                return Ok(complete_enriched_movie);
+                return Ok(detailed_movie);
             }
         });
         return complete_movies;
@@ -76,7 +67,7 @@ impl TMDBMovieAssetService {
         detailed_movie: &DetailedMovie,
         placeholder_path: &str,
     ) -> Result<String> {
-        let path = detailed_movie.poster_path().unwrap_or_default();
+        let path = detailed_movie.ext_poster_path().unwrap_or_default();
         Self::fetch_and_store_image(
             tmdb_api,
             &path,
@@ -94,7 +85,7 @@ impl TMDBMovieAssetService {
         detailed_movie: &DetailedMovie,
         placeholder_path: &str,
     ) -> Result<String> {
-        let path = detailed_movie.poster_path().unwrap_or_default();
+        let path = detailed_movie.ext_backdrop_path().unwrap_or_default();
         Self::fetch_and_store_image(
             tmdb_api,
             &path,

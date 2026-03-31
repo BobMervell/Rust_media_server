@@ -1,4 +1,4 @@
-use crate::domain::movie::detailed_movie::{DetailedMovie, MovieDetailResult};
+use crate::domain::movie::{detailed_movie::DetailedMovie, value_objects::MovieDetailResult};
 
 pub fn is_video_file(file_name: &str) -> bool {
     let video_extensions = ["mp4", "mkv", "avi", "mov", "flv", "wmv", "webm"];

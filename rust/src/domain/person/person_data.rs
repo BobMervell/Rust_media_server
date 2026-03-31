@@ -3,7 +3,7 @@ use serde::Deserialize;
 #[derive(Deserialize, Debug, Clone)]
 pub struct PersonData {
     #[serde(rename = "id")]
-    pub tmdb_id: i64,
+    pub ext_id: i64,
     pub name: String,
     pub biography: String,
     #[serde(rename = "profile_path")]
@@ -14,14 +14,14 @@ pub struct PersonData {
 
 impl PersonData {
     pub fn new(
-        tmdb_id: i64,
+        ext_id: i64,
         name: String,
         biography: String,
         picture_api_path: Option<String>,
         picture_file_path: String,
     ) -> Self {
         Self {
-            tmdb_id,
+            ext_id,
             name,
             biography,
             picture_api_path,
@@ -29,8 +29,8 @@ impl PersonData {
         }
     }
 
-    pub fn tmdb_id(&self) -> i64 {
-        self.tmdb_id
+    pub fn ext_id(&self) -> i64 {
+        self.ext_id
     }
 
     pub fn name(&self) -> &str {

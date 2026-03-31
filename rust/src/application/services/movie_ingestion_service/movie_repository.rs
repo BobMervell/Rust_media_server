@@ -2,7 +2,7 @@ use crate::{
     api::media::PersonData,
     application::abstractions::abstractions::MovieRepository,
     domain::{
-        movie::complete_movie::{CompleteEnrichedMovie, CompleteMovie},
+        movie::detailed_movie::{DetailedMovie, EnrichedMovie},
         person::credits::CreditsMovie,
     },
     infrastructure::db_infra::sqlite_data_saver::DataSaver,
@@ -17,9 +17,9 @@ pub struct SqliteDataSaver {
 impl MovieRepository for SqliteDataSaver {
     async fn save_enriched_movies(
         &mut self,
-        enriched_movies: impl Stream<Item = Result<CompleteEnrichedMovie>>,
+        enriched_movies: impl Stream<Item = Result<EnrichedMovie>>,
     ) -> Vec<Result<()>> {
-        let mut movies: Vec<Result<CompleteEnrichedMovie>> = enriched_movies.collect().await;
+        let mut movies: Vec<Result<EnrichedMovie>> = enriched_movies.collect().await;
         let mut output = Vec::new();
         for m in movies.iter_mut().filter_map(|m| m.as_mut().ok()) {
             let pushed_movie = self.push_data(&mut m.movie, &m.credits, &m.persons);
@@ -43,7 +43,7 @@ impl SqliteDataSaver {
 
     fn push_data(
         &mut self,
-        m: &mut CompleteMovie,
+        m: &mut DetailedMovie,
         c: &CreditsMovie,
         p: &Vec<PersonData>,
     ) -> Result<()> {
@@ -52,7 +52,6 @@ impl SqliteDataSaver {
             .conn
             .transaction()
             .context("Failed to open database transaction")?;
-
         let movie_id = DataSaver::push_movie(&m, &tx)
             .with_context(|| format!("Failed to push movie data for {} ", m.file_path(),))?;
         m.set_id(movie_id);
@@ -66,9 +65,8 @@ impl SqliteDataSaver {
         DataSaver::push_persons(p, &tx)
             .with_context(|| format!("Failed to push persons data for {} ", m.file_path(),))?;
 
-        DataSaver::push_credits(movie_id, &c, &tx)
+        DataSaver::push_credits(m.id(), &c, &tx)
             .with_context(|| format!("Failed to push credits data for {} ", m.file_path(),))?;
-
         tx.commit()
             .context("Failed to commit data insertion into movie table")?;
 

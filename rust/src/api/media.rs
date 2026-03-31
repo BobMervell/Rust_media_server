@@ -45,7 +45,7 @@ pub async fn start(path: &str, username: &str, password: &str, token: &str) -> S
     let saver = SqliteDataSaver::new().unwrap();
     let mut test =
         MovieIngestionService::new(explorer, parser, details_fetcher, image_fetcher, saver);
-    let truc = test.ingest_movies().await;
+    let _truc = test.ingest_movies().await;
     format!("Hello!")
 }
 

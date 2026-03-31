@@ -2,7 +2,6 @@ use anyhow::Result;
 use trpl::Stream;
 
 use crate::domain::movie::{
-    complete_movie::CompleteEnrichedMovie,
     detailed_movie::{DetailedMovie, EnrichedMovie},
     parsed_movie::ParsedMovie,
     raw_entry::RawEntry,
@@ -36,12 +35,12 @@ pub trait MovieAssetService {
         &self,
         detailed_movies: impl Stream<Item = Result<EnrichedMovie>>,
         placeholder_path: &str,
-    ) -> impl Stream<Item = Result<CompleteEnrichedMovie>>;
+    ) -> impl Stream<Item = Result<EnrichedMovie>>;
 }
 
 pub trait MovieRepository {
     async fn save_enriched_movies(
         &mut self,
-        enriched_movies: impl Stream<Item = Result<CompleteEnrichedMovie>>,
+        enriched_movies: impl Stream<Item = Result<EnrichedMovie>>,
     ) -> Vec<Result<()>>;
 }

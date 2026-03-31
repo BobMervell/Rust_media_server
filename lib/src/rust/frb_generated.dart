@@ -510,7 +510,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     if (arr.length != 5)
       throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
     return PersonData(
-      tmdbId: dco_decode_i_64(arr[0]),
+      extId: dco_decode_i_64(arr[0]),
       name: dco_decode_String(arr[1]),
       biography: dco_decode_String(arr[2]),
       pictureApiPath: dco_decode_opt_String(arr[3]),
@@ -666,13 +666,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   @protected
   PersonData sse_decode_person_data(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    var var_tmdbId = sse_decode_i_64(deserializer);
+    var var_extId = sse_decode_i_64(deserializer);
     var var_name = sse_decode_String(deserializer);
     var var_biography = sse_decode_String(deserializer);
     var var_pictureApiPath = sse_decode_opt_String(deserializer);
     var var_pictureFilePath = sse_decode_String(deserializer);
     return PersonData(
-      tmdbId: var_tmdbId,
+      extId: var_extId,
       name: var_name,
       biography: var_biography,
       pictureApiPath: var_pictureApiPath,
@@ -820,7 +820,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   @protected
   void sse_encode_person_data(PersonData self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_i_64(self.tmdbId, serializer);
+    sse_encode_i_64(self.extId, serializer);
     sse_encode_String(self.name, serializer);
     sse_encode_String(self.biography, serializer);
     sse_encode_opt_String(self.pictureApiPath, serializer);

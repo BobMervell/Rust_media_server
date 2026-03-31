@@ -8,7 +8,7 @@ use reqwest::{
 use crate::{
     api::media::PersonData,
     domain::{
-        movie::{detailed_movie::MovieDetailResult, value_objects::MovieGenres},
+        movie::value_objects::{MovieDetailResult, MovieGenres},
         person::credits::CreditsMovie,
     },
 };

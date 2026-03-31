@@ -38,7 +38,7 @@ impl MovieMetadataService for TMDBMovieMetadataService {
                     })?;
 
                 let genres = tmdb_api
-                    .fetch_movie_genres(movie.tmdb_id())
+                    .fetch_movie_genres(movie.ext_id())
                     .await
                     .with_context(|| {
                         format!(
@@ -47,7 +47,8 @@ impl MovieMetadataService for TMDBMovieMetadataService {
                             parsed_movie.file_year()
                         )
                     })?;
-                movie.set_genre(&genres);
+                movie.set_genres(&genres);
+
                 Ok(movie)
             }
         });
@@ -59,11 +60,10 @@ impl MovieMetadataService for TMDBMovieMetadataService {
         detailed_movies: impl Stream<Item = Result<DetailedMovie>>,
     ) -> impl Stream<Item = Result<EnrichedMovie>> {
         let enriched_movies = detailed_movies.and_then(|detailed_movie| {
-            println!("{}", detailed_movie.title());
             let tmdb_api = self.tmdb_api.clone();
             async move {
                 let credits = tmdb_api
-                    .fetch_movie_credits(detailed_movie.tmdb_id())
+                    .fetch_movie_credits(detailed_movie.ext_id())
                     .await?;
                 let persons = Self::get_persons_details(&tmdb_api, &credits).await;
                 let enriched_movie = EnrichedMovie::new(detailed_movie, credits, persons);
@@ -94,7 +94,6 @@ impl TMDBMovieMetadataService {
                 let movie = filter_movies::get_most_popular(movies);
                 Ok(movie
                     .set_file_path(parsed_movie.file_path())
-                    .set_file_title(parsed_movie.file_title())
                     .set_file_optional_info(parsed_movie.file_optional_info()))
             }
             Err(e) => Err(anyhow!(
@@ -110,23 +109,23 @@ impl TMDBMovieMetadataService {
         tmdb_api: &TmdbMetaDataApi,
         credits: &CreditsMovie,
     ) -> Vec<PersonData> {
-        let mut person_tmdb_ids: Vec<i64> = credits
+        let mut person_ext_ids: Vec<i64> = credits
             .cast()
             .iter()
-            .filter_map(|c| filter_credits::is_credited(c).then(|| c.tmdb_id()))
+            .filter_map(|c| filter_credits::is_credited(c).then(|| c.ext_id()))
             .collect();
 
         let crew_ids: Vec<i64> = credits
             .crew()
             .iter()
-            .filter_map(|c| filter_credits::is_main_crew(c).then(|| c.tmdb_id()))
+            .filter_map(|c| filter_credits::is_main_crew(c).then(|| c.ext_id()))
             .collect();
 
-        person_tmdb_ids.extend(crew_ids);
+        person_ext_ids.extend(crew_ids);
 
         let batch_size = 200;
 
-        let persons = stream::iter(person_tmdb_ids)
+        let persons = stream::iter(person_ext_ids)
             .map(|id| async move {
                 tmdb_api
                     .fetch_person_details(id)

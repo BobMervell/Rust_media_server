@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use rusqlite::{Connection, Transaction};
 
 use crate::domain::{
-    movie::complete_movie::CompleteMovie,
+    movie::detailed_movie::DetailedMovie,
     person::{credits::CreditsMovie, person_data::PersonData},
 };
 
@@ -42,13 +42,13 @@ impl DataSaver {
             .execute(
                 "CREATE TABLE IF NOT EXISTS Movie (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                tmdb_id INTEGER,
+                ext_id INTEGER,
                 file_path TEXT NOT NULL UNIQUE,
                 file_optional_info TEXT,
                 title TEXT NOT NULL,
                 original_title TEXT NOT NULL,
                 release_date TEXT,
-                summary TEXT NOT NULL,
+                overview TEXT NOT NULL,
                 vote_average REAL NOT NULL DEFAULT 0,
                 poster TEXT NOT NULL,
                 backdrop TEXT NOT NULL
@@ -59,7 +59,7 @@ impl DataSaver {
 
         self.create_index("Movie", "title")?;
         self.create_index("Movie", "release_date")?;
-        self.create_index("Movie", "tmdb_id")?;
+        self.create_index("Movie", "ext_id")?;
 
         Ok(())
     }
@@ -69,12 +69,12 @@ impl DataSaver {
             .execute(
                 "CREATE TABLE IF NOT EXISTS Credits (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                tmdb_id INTEGER,
-                movie_id INTEGER,
+                c_ext_id INTEGER,
+                m_id INTEGER,
                 name TEXT NOT NULL,
-                character TEXT,
+                character_played TEXT,
                 job_name TEXT NOT NULL,
-                FOREIGN KEY (movie_id) REFERENCES Movie(id)
+                FOREIGN KEY (m_id) REFERENCES Movie(id)
             );
             ",
                 (),
@@ -86,8 +86,8 @@ impl DataSaver {
 
         self.conn
             .execute(
-                "CREATE UNIQUE INDEX IF NOT EXISTS idx_cast_tmdb_movie_character_job
-         ON Credits (tmdb_id, movie_id, character, job_name);",
+                "CREATE UNIQUE INDEX IF NOT EXISTS idx_credit_movie_character_job
+         ON Credits (c_ext_id, m_id, character_played, job_name);",
                 [],
             )
             .context("Failed to create unique composite index for table: Credits")?;
@@ -99,9 +99,9 @@ impl DataSaver {
         self.conn
             .execute(
                 "CREATE TABLE IF NOT EXISTS Person (
-                tmdb_id INTEGER PRIMARY KEY,
+                ext_id INTEGER PRIMARY KEY,
                 name TEXT NOT NULL,
-                summary TEXT,
+                overview TEXT,
                 picture_path TEXT
             );
             ",
@@ -156,21 +156,21 @@ impl DataSaver {
     // endregion
 
     // region: ---- INSERT DATA ----
-    pub fn push_movie(m: &CompleteMovie, tx: &Transaction) -> Result<i64> {
+    pub fn push_movie(m: &DetailedMovie, tx: &Transaction) -> Result<i64> {
         tx.execute(
             "
-        INSERT INTO Movie ( tmdb_id, file_path, file_optional_info, title, original_title,
-        release_date, summary, vote_average, poster, backdrop)
+        INSERT INTO Movie (ext_id, file_path, file_optional_info, title, original_title,
+        release_date, overview, vote_average, poster, backdrop)
         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
         ON CONFLICT(file_path) DO NOTHING;",
             (
-                m.tmdb_id(),
+                m.ext_id(),
                 m.file_path(),
                 m.file_optional_info(),
                 m.title(),
                 m.original_title(),
                 m.release_date(),
-                m.summary(),
+                m.overview(),
                 m.vote_average(),
                 m.poster_file_path(),
                 m.backdrop_file_path(),
@@ -202,10 +202,10 @@ impl DataSaver {
     pub fn push_persons(persons: &Vec<PersonData>, tx: &Transaction) -> Result<()> {
         for p in persons.iter() {
             tx.execute(
-                "INSERT INTO Person (tmdb_id, name, summary, picture_path)
+                "INSERT INTO Person (ext_id, name, overview, picture_path)
          VALUES (?1, ?2, ?3, ?4)
-        ON CONFLICT(tmdb_id) DO NOTHING;",
-                (p.tmdb_id(), p.name(), p.biography(), p.picture_file_path()),
+        ON CONFLICT(ext_id) DO NOTHING;",
+                (p.ext_id(), p.name(), p.biography(), p.picture_file_path()),
             )
             .with_context(|| {
                 format!("Failed to insert new entry into person table: {}", p.name())
@@ -217,20 +217,23 @@ impl DataSaver {
     pub fn push_credits(movie_id: i64, c: &CreditsMovie, tx: &Transaction) -> Result<()> {
         let mut statement = tx
             .prepare(
-                "INSERT INTO Credits (tmdb_id, movie_id, name, job_name, character)
-         VALUES (?1, ?2, ?3, ?4, ?5)
-         ON CONFLICT(tmdb_id, movie_id, character, job_name) DO NOTHING",
+                "INSERT INTO Credits (c_ext_id, m_id, name, character_played, job_name)
+     VALUES (?1, ?2, ?3, ?4, ?5)
+     ON CONFLICT(c_ext_id, m_id, character_played, job_name) DO NOTHING;",
             )
-            .context("Failed to prepare statement for credit insertion into Credits table")?;
+            .map_err(|e| {
+                println!("SQL error: {:?}", e);
+                e
+            })?;
 
         for cast in c.cast().iter() {
             statement
                 .execute((
-                    cast.tmdb_id(),
+                    cast.ext_id(),
                     movie_id,
                     cast.name(),
-                    "actor",
                     cast.character(),
+                    "actor",
                 ))
                 .with_context(|| {
                     format!("Failed to insert cast into Person table for: {:?}", cast)
@@ -239,7 +242,7 @@ impl DataSaver {
 
         for crew in c.crew().iter() {
             statement
-                .execute((crew.tmdb_id(), movie_id, crew.name(), crew.job(), "N/A"))
+                .execute((crew.ext_id(), movie_id, crew.name(), "N/A", crew.job()))
                 .with_context(|| {
                     format!("Failed to insert crew into Person table for: {:?}", crew)
                 })?;
@@ -247,7 +250,7 @@ impl DataSaver {
         Ok(())
     }
 
-    pub fn push_genre(m: &CompleteMovie, tx: &Transaction) -> Result<()> {
+    pub fn push_genre(m: &DetailedMovie, tx: &Transaction) -> Result<()> {
         for genre in m.genres().iter() {
             tx.execute(
                 "INSERT INTO Genre ( id, name)
@@ -265,7 +268,7 @@ impl DataSaver {
         Ok(())
     }
 
-    pub fn push_movie_genre(m: &CompleteMovie, tx: &Transaction) -> Result<()> {
+    pub fn push_movie_genre(m: &DetailedMovie, tx: &Transaction) -> Result<()> {
         for genre in m.genres().iter() {
             tx.execute(
                 "INSERT INTO Movie_Genre ( movie_id, genre_id)

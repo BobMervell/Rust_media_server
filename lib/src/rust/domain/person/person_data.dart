@@ -7,14 +7,14 @@ import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 class PersonData {
-  final PlatformInt64 tmdbId;
+  final PlatformInt64 extId;
   final String name;
   final String biography;
   final String? pictureApiPath;
   final String pictureFilePath;
 
   const PersonData({
-    required this.tmdbId,
+    required this.extId,
     required this.name,
     required this.biography,
     this.pictureApiPath,
@@ -23,7 +23,7 @@ class PersonData {
 
   @override
   int get hashCode =>
-      tmdbId.hashCode ^
+      extId.hashCode ^
       name.hashCode ^
       biography.hashCode ^
       pictureApiPath.hashCode ^
@@ -34,7 +34,7 @@ class PersonData {
       identical(this, other) ||
       other is PersonData &&
           runtimeType == other.runtimeType &&
-          tmdbId == other.tmdbId &&
+          extId == other.extId &&
           name == other.name &&
           biography == other.biography &&
           pictureApiPath == other.pictureApiPath &&
