@@ -6,7 +6,7 @@ pub use crate::domain::{
 use crate::{
     application::services::movie_ingestion_service::{
         media_discovery_service::SmbExplorer, movie_asset_service::TMDBMovieAssetService,
-        movie_factory::MovieExtractor, movie_ingestion_service::MovieIngestionService,
+        movie_factory::MovieExtractor, movie_ingestion_orchestrator::MovieIngestionService,
         movie_metadata_service::TMDBMovieMetadataService, movie_repository::SqliteDataSaver,
     },
     infrastructure::db_infra::sqlite_data_getter::DataGetter,
