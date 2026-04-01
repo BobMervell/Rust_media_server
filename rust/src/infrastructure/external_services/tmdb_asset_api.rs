@@ -27,7 +27,7 @@ impl TmdbAssetApi {
             .build()
             .context("Failed to build client")?;
 
-        Ok(Self { client: client })
+        Ok(Self { client })
     }
 
     pub async fn get_image(&self, format: &str, picture_path: &str) -> Result<Response> {
@@ -58,6 +58,6 @@ impl TmdbAssetApi {
                 }
             }
         }
-        return Ok(response);
+        Ok(response)
     }
 }

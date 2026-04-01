@@ -13,7 +13,7 @@ impl DataGetter {
     pub fn new(db_path: String) -> Result<Self> {
         let conn = Connection::open(&db_path)
             .with_context(|| format!("Failed to open database connection at : {}", &db_path))?;
-        Ok(Self { conn: conn })
+        Ok(Self { conn })
     }
 
     //TODO add filters
@@ -28,7 +28,7 @@ impl DataGetter {
         let mut stmt = self
             .conn
             .prepare(&query_str)
-            .with_context(|| format!("Failed to prepare statement for data selection"))?;
+            .with_context(|| "Failed to prepare statement for data selection".to_string())?;
 
         let mapped_rows = stmt
             .query_map([], |row| {
@@ -41,7 +41,7 @@ impl DataGetter {
                     row.get(5)?,
                 ))
             })
-            .with_context(|| format!("Failed to get select result"))?;
+            .with_context(|| "Failed to get select result".to_string())?;
 
         Ok(mapped_rows
             .filter_map(|res| res.ok())
@@ -80,19 +80,18 @@ impl DataGetter {
     }
 
     pub fn get_media_cast(&self, media_id: i64) -> Result<Vec<PersonSnapshot>> {
-        let query_str = format!(
-            "SELECT c.tmdb_id, c.name, c.character, c.job_name, p.picture_path
+        let query_str = "SELECT c.tmdb_id, c.name, c.character, c.job_name, p.picture_path
              FROM Credits AS c
              INNER JOIN Person AS p
                 ON c.tmdb_id = p.tmdb_id
              WHERE c.movie_id = ?1 AND c.job_name = 'actor'
-             ORDER BY c.id ",
-        );
+             ORDER BY c.id "
+            .to_string();
 
         let mut stmt = self
             .conn
             .prepare(&query_str)
-            .with_context(|| format!("Failed to prepare statement for data selection"))?;
+            .with_context(|| "Failed to prepare statement for data selection".to_string())?;
 
         let mapped_rows = stmt
             .query_map([media_id], |row| {
@@ -104,7 +103,7 @@ impl DataGetter {
                     row.get(4)?,
                 ))
             })
-            .with_context(|| format!("Failed to get select result"))?;
+            .with_context(|| "Failed to get select result".to_string())?;
 
         Ok(mapped_rows
             .filter_map(|res| res.ok())
@@ -112,19 +111,18 @@ impl DataGetter {
     }
 
     pub fn get_media_crew(&self, media_id: i64) -> Result<Vec<PersonSnapshot>> {
-        let query_str = format!(
-            "SELECT c.tmdb_id, c.name, c.character, c.job_name, p.picture_path
+        let query_str = "SELECT c.tmdb_id, c.name, c.character, c.job_name, p.picture_path
              FROM Credits AS c
              INNER JOIN Person AS p
                 ON c.tmdb_id = p.tmdb_id
              WHERE c.movie_id = ?1 AND c.job_name != 'actor'
-             ORDER BY c.id",
-        );
+             ORDER BY c.id"
+            .to_string();
 
         let mut stmt = self
             .conn
             .prepare(&query_str)
-            .with_context(|| format!("Failed to prepare statement for data selection"))?;
+            .with_context(|| "Failed to prepare statement for data selection".to_string())?;
 
         let mapped_rows = stmt
             .query_map([media_id], |row| {
@@ -136,7 +134,7 @@ impl DataGetter {
                     row.get(4)?,
                 ))
             })
-            .with_context(|| format!("Failed to get select result"))?;
+            .with_context(|| "Failed to get select result".to_string())?;
 
         Ok(mapped_rows
             .filter_map(|res| res.ok())

@@ -14,7 +14,7 @@ impl DataSaver {
     pub fn new(db_path: String) -> Result<Self> {
         let conn = Connection::open(&db_path)
             .with_context(|| format!("Failed to open database connection at : {}", &db_path))?;
-        Ok(Self { conn: conn })
+        Ok(Self { conn })
     }
 
     // region: ---- CREATE TABLES ---
@@ -146,10 +146,8 @@ impl DataSaver {
          ON Movie_Genre (movie_id, genre_id);",
             [],
         ).with_context(|| {
-            format!(
-                "Failed to create composite index for table: movie_genre and columns: movie_id and genre_id"
-            )
-        })?;
+            
+                "Failed to create composite index for table: movie_genre and columns: movie_id and genre_id".to_string()        })?;
 
         Ok(())
     }
@@ -199,7 +197,7 @@ impl DataSaver {
         Ok(movie_id)
     }
 
-    pub fn push_persons(persons: &Vec<PersonData>, tx: &Transaction) -> Result<()> {
+    pub fn push_persons(persons: &[PersonData], tx: &Transaction) -> Result<()> {
         for p in persons.iter() {
             tx.execute(
                 "INSERT INTO Person (ext_id, name, overview, picture_path)

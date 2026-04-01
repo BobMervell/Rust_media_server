@@ -4,7 +4,7 @@ use futures::{StreamExt, TryStreamExt};
 use trpl::Stream;
 
 use crate::{
-    application::abstractions::abstractions::MovieAssetService,
+    application::abstractions::MovieAssetService,
     domain::{
         movie::detailed_movie::{DetailedMovie, EnrichedMovie},
         person::person_data::PersonData,
@@ -49,10 +49,10 @@ impl MovieAssetService for TMDBMovieAssetService {
                     placeholder_path,
                 )
                 .await;
-                return Ok(detailed_movie);
+                Ok(detailed_movie)
             }
         });
-        return complete_movies;
+        complete_movies
     }
 }
 
@@ -100,7 +100,7 @@ impl TMDBMovieAssetService {
 
     pub async fn fetch_save_persons_profile(
         tmdb_api: &TmdbAssetApi,
-        persons: &mut Vec<PersonData>,
+        persons: &mut [PersonData],
         placeholder_path: &str,
     ) {
         let batch_size = 50;
@@ -152,11 +152,11 @@ impl TMDBMovieAssetService {
                     .await
                     .with_context(|| format!("Failed to save image for: {}", name))?;
 
-                return Ok(file_path);
+                Ok(file_path)
             }
             Err(e) => {
                 tracing::debug!("Failed to get image for: {}.\n Caused by {}", name, e);
-                return Ok(placeholder_path.to_owned());
+                Ok(placeholder_path.to_owned())
             }
         }
     }

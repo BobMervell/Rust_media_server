@@ -1,4 +1,4 @@
-use crate::application::abstractions::abstractions::{
+use crate::application::abstractions::{
     MediaDiscoveryService, MovieAssetService, MovieFactory, MovieMetadataService, MovieRepository,
 };
 

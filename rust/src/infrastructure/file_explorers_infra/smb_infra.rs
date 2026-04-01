@@ -25,7 +25,7 @@ impl SmbInfra {
             .await
             .with_context(|| format!("Failed to retrieve directory from remote: {}", &path))?;
 
-        Ok(Self { tree: tree })
+        Ok(Self { tree })
     }
 
     pub async fn read_directory(&self, path: &str) -> Result<Arc<Directory>> {
@@ -33,14 +33,14 @@ impl SmbInfra {
 
         let resource = self
             .tree
-            .open_existing(&path, access_mask)
+            .open_existing(path, access_mask)
             .await
             .with_context(|| format!("Failed to open ressource: {}", path))?;
 
         if let Resource::Directory(dir) = resource {
             Ok(Arc::from(dir))
         } else {
-            return Err(anyhow!("Ressource is not a directory: {}", path));
+            Err(anyhow!("Ressource is not a directory: {}", path))
         }
     }
 
@@ -58,7 +58,7 @@ impl SmbInfra {
         } else {
             format!("{}/{}", path, dir_entry.file_name)
         };
-        return Some(sub_path);
+        Some(sub_path)
     }
 
     pub fn parse_file_path(
@@ -70,11 +70,11 @@ impl SmbInfra {
         if path.is_empty() {
             let file_name = file_entry.file_name.to_string();
             let file_path = format!("{}/{}", root_path, file_name);
-            return (file_path, file_name);
+            (file_path, file_name)
         } else {
             let file_path = format!("{}/{}/{}", root_path, path, file_entry.file_name);
             let file_name = file_entry.file_name.to_string();
-            return (file_path, file_name);
-        };
+            (file_path, file_name)
+        }
     }
 }

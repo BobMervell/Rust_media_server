@@ -28,5 +28,5 @@ pub fn get_most_popular(fetch_result: MovieDetailResult) -> DetailedMovie {
             result_movie = movie.to_owned();
         }
     }
-    return result_movie;
+    result_movie
 }

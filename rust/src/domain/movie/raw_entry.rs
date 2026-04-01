@@ -13,10 +13,10 @@ impl RawEntry {
     }
 
     pub fn file_path(&self) -> String {
-        return self.file_path.to_owned();
+        self.file_path.to_owned()
     }
 
     pub fn file_name(&self) -> String {
-        return self.file_name.to_owned();
+        self.file_name.to_owned()
     }
 }

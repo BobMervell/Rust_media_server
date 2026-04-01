@@ -3,14 +3,10 @@ use serde::Deserialize;
 #[derive(Deserialize, Debug, Clone)]
 pub struct CreditsMovie {
     #[serde(rename = "id")]
-    pub movie_ext_id: i64,
     pub cast: Vec<Cast>,
     pub crew: Vec<Crew>,
 }
 impl CreditsMovie {
-    pub fn movie_ext_id(&self) -> i64 {
-        self.movie_ext_id
-    }
     pub fn cast(&self) -> &Vec<Cast> {
         &self.cast
     }

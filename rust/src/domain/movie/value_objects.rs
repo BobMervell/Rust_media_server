@@ -37,6 +37,6 @@ impl MovieDetailResult {
     }
 
     pub fn results(&self) -> &[DetailedMovie] {
-        return &self.results;
+        &self.results
     }
 }

@@ -36,7 +36,7 @@ impl TmdbMetaDataApi {
             .build()
             .context("Failed to build client")?;
 
-        Ok(Self { client: client })
+        Ok(Self { client })
     }
 
     pub async fn fetch_movies(
@@ -78,7 +78,7 @@ impl TmdbMetaDataApi {
                 )
             })?;
 
-        if movies.results().len() == 0 {
+        if movies.results().is_empty() {
             return Err(anyhow!(
                 "No result foud for for movie: {} ({:?}), from url: {}",
                 movie_name,

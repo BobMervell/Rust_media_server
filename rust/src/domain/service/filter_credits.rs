@@ -1,7 +1,7 @@
 use crate::domain::person::credits::Cast;
 
 pub fn is_credited(cast: &Cast) -> bool {
-    return !cast.character().contains("uncredited");
+    !cast.character().contains("uncredited")
 }
 
 pub fn is_main_crew(crew: &crate::domain::person::credits::Crew) -> bool {
@@ -19,72 +19,55 @@ pub fn is_main_crew(crew: &crate::domain::person::credits::Crew) -> bool {
 }
 
 fn is_important_directing(job: &str) -> bool {
-    match job {
-        "Director" => true,
-        "Co-Director" => true,
-        _ => false,
-    }
+    matches!(job, "Director" | "Co-Director")
 }
 
 fn is_important_production(job: &str) -> bool {
-    match job {
-        "Producer" => true,
-        _ => false,
-    }
+    matches!(job, "Producer")
 }
 
 fn is_important_camera(job: &str) -> bool {
-    match job {
-        "Director of Photography" => true,
-        _ => false,
-    }
+    matches!(job, "Director of Photography")
 }
 
 fn is_important_sound(job: &str) -> bool {
-    match job {
-        "Original Music Composer" => true,
-        "Sound Designer" => true,
-        _ => false,
-    }
+    matches!(job, "Original Music Composer" | "Sound Designer")
 }
 
 fn is_important_vfx(job: &str) -> bool {
-    match job {
-        "VFX Supervisor" => true,
-        "Visual Effects Supervisor" => true,
-        "Visual Effects Art Director" => true,
-        _ => false,
-    }
+    matches!(
+        job,
+        "VFX Supervisor" | "Visual Effects Supervisor" | "Visual Effects Art Director"
+    )
 }
 
 fn is_important_writing(job: &str) -> bool {
-    match job {
-        "Writer" => true,
-        "Original Film Writer" => true,
-        "Co-Writer" => true,
-        "Scenario Writer" => true,
-        "Teleplay" => true,
-        "Screenplay" => true,
-        _ => false,
-    }
+    matches!(
+        job,
+        "VFX Supervisor" | "Visual Effects Supervisor" | "Visual Effects Art Director"
+    )
 }
 
 fn is_important_art(job: &str) -> bool {
-    match job {
-        "Art Direction" => true,
-        "Co-Art Director" => true,
-        "Production Design" => true,
-        "Art Designer" => true,
-        "Set Designer" => true,
-        "Property Master" => true,
-        _ => false,
-    }
+    matches!(
+        job,
+        "Writer"
+            | "Original Film Writer"
+            | "Co-Writer"
+            | "Scenario Writer"
+            | "Teleplay"
+            | "Screenplay"
+    )
 }
 
 fn is_important_costumes_makeup(job: &str) -> bool {
-    match job {
-        "Costume Designer" => true,
-        "Makeup Designer" => true,
-        _ => false,
-    }
+    matches!(
+        job,
+        "Writer"
+            | "Original Film Writer"
+            | "Co-Writer"
+            | "Scenario Writer"
+            | "Teleplay"
+            | "Screenplay"
+    )
 }

@@ -1,6 +1,6 @@
 use crate::{
     api::media::PersonData,
-    application::abstractions::abstractions::MovieRepository,
+    application::abstractions::MovieRepository,
     domain::{
         movie::detailed_movie::{DetailedMovie, EnrichedMovie},
         person::credits::CreditsMovie,
@@ -25,7 +25,7 @@ impl MovieRepository for SqliteDataSaver {
             let pushed_movie = self.push_data(&mut m.movie, &m.credits, &m.persons);
             output.push(pushed_movie);
         }
-        return output;
+        output
     }
 }
 
@@ -45,27 +45,27 @@ impl SqliteDataSaver {
         &mut self,
         m: &mut DetailedMovie,
         c: &CreditsMovie,
-        p: &Vec<PersonData>,
+        p: &[PersonData],
     ) -> Result<()> {
         let tx = self
             .data_saver
             .conn
             .transaction()
             .context("Failed to open database transaction")?;
-        let movie_id = DataSaver::push_movie(&m, &tx)
+        let movie_id = DataSaver::push_movie(m, &tx)
             .with_context(|| format!("Failed to push movie data for {} ", m.file_path(),))?;
         m.set_id(movie_id);
 
-        DataSaver::push_genre(&m, &tx)
+        DataSaver::push_genre(m, &tx)
             .with_context(|| format!("Failed to push genre data for {} ", m.file_path(),))?;
 
-        DataSaver::push_movie_genre(&m, &tx)
+        DataSaver::push_movie_genre(m, &tx)
             .with_context(|| format!("Failed to push movie_genre data for {} ", m.file_path(),))?;
 
         DataSaver::push_persons(p, &tx)
             .with_context(|| format!("Failed to push persons data for {} ", m.file_path(),))?;
 
-        DataSaver::push_credits(m.id(), &c, &tx)
+        DataSaver::push_credits(m.id(), c, &tx)
             .with_context(|| format!("Failed to push credits data for {} ", m.file_path(),))?;
         tx.commit()
             .context("Failed to commit data insertion into movie table")?;

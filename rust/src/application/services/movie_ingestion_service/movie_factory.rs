@@ -1,5 +1,5 @@
 use crate::{
-    application::abstractions::abstractions::MovieFactory,
+    application::abstractions::MovieFactory,
     domain::{
         movie::{parsed_movie::ParsedMovie, raw_entry::RawEntry},
         service::filter_movies,
@@ -21,10 +21,10 @@ impl MovieFactory for MovieExtractor {
                 {
                     return Some(ParsedMovie::new(entry.file_path(), entry.file_name()));
                 }
-                return None;
+                None
             }
             Err(e) => Some(Err(anyhow!("Failed to parse entry.\n Caused by: {}", e))),
         });
-        return parsed_movies;
+        parsed_movies
     }
 }

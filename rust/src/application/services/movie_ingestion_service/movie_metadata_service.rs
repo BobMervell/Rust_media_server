@@ -3,7 +3,7 @@ use futures::{stream, StreamExt, TryStreamExt};
 use trpl::Stream;
 
 use crate::{
-    application::abstractions::abstractions::MovieMetadataService,
+    application::abstractions::MovieMetadataService,
     domain::{
         movie::{
             detailed_movie::{DetailedMovie, EnrichedMovie},
@@ -52,7 +52,7 @@ impl MovieMetadataService for TMDBMovieMetadataService {
                 Ok(movie)
             }
         });
-        return detailed_movies;
+        detailed_movies
     }
 
     fn fetch_credits(
@@ -67,10 +67,10 @@ impl MovieMetadataService for TMDBMovieMetadataService {
                     .await?;
                 let persons = Self::get_persons_details(&tmdb_api, &credits).await;
                 let enriched_movie = EnrichedMovie::new(detailed_movie, credits, persons);
-                return Ok(enriched_movie);
+                Ok(enriched_movie)
             }
         });
-        return enriched_movies;
+        enriched_movies
     }
 }
 
@@ -112,13 +112,15 @@ impl TMDBMovieMetadataService {
         let mut person_ext_ids: Vec<i64> = credits
             .cast()
             .iter()
-            .filter_map(|c| filter_credits::is_credited(c).then(|| c.ext_id()))
+            .filter(|&c| filter_credits::is_credited(c))
+            .map(|c| c.ext_id())
             .collect();
 
         let crew_ids: Vec<i64> = credits
             .crew()
             .iter()
-            .filter_map(|c| filter_credits::is_main_crew(c).then(|| c.ext_id()))
+            .filter(|c| filter_credits::is_main_crew(c))
+            .map(|c| c.ext_id())
             .collect();
 
         person_ext_ids.extend(crew_ids);
@@ -140,6 +142,6 @@ impl TMDBMovieMetadataService {
             .collect()
             .await;
 
-        return persons;
+        persons
     }
 }

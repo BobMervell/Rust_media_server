@@ -1,6 +1,6 @@
 use crate::{
-    application::abstractions::abstractions::MediaDiscoveryService,
-    domain::movie::raw_entry::RawEntry, infrastructure::file_explorers_infra::smb_infra::SmbInfra,
+    application::abstractions::MediaDiscoveryService, domain::movie::raw_entry::RawEntry,
+    infrastructure::file_explorers_infra::smb_infra::SmbInfra,
 };
 
 use anyhow::{anyhow, Context, Result};
